@@ -23,7 +23,7 @@ app.use((req, res, next) => {
     next();
   });
 // app.use(cors());
-mongoose.connect('mongodb://localhost:27017/codeforces',{
+mongoose.connect(process.env.MONGO_URI,{
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
