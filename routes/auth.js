@@ -14,9 +14,11 @@ router.use(cookieParser());
 
 const cookieOptions = {
     maxAge: 3600000, // Cookie will expire in 1 hour (in milliseconds)
-    httpOnly: false, // The cookie cannot be accessed through client-side JavaScript
+    httpOnly: true, // The cookie cannot be accessed through client-side JavaScript
     secure: true, // The cookie will only be sent over HTTPS
     sameSite: 'None', // The cookie will be sent on cross-site requests
+    domain: '.onrender.com', // The cookie will be accessible in every subdomain
+    path: '/', // The cookie will be accessible on all paths
   };
 
 function authenticateToken(req, res, next) {
