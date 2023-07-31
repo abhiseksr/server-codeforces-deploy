@@ -12,6 +12,13 @@ router.use(express.urlencoded({extended: true}));
 router.use(express.json());
 router.use(cookieParser());
 
+const cookieOptions = {
+    maxAge: 3600000, // Cookie will expire in 1 hour (in milliseconds)
+    httpOnly: false, // The cookie cannot be accessed through client-side JavaScript
+    secure: true, // The cookie will only be sent over HTTPS
+    sameSite: 'None', // The cookie will be sent on cross-site requests
+  };
+
 function authenticateToken(req, res, next) {
     // console.log(req.cookies);
     // res.send('hi');
@@ -44,7 +51,7 @@ router.post('/register',async (req,res, next)=>{
         const user = new User({username, password: await getHashedPassword(password), email, accountType});
         await user.save();
         const accessToken = generateAccessToken({username, email, accountType});
-        res.cookie('accessToken', accessToken);
+        res.cookie('accessToken', accessToken, cookieOptions);
         res.json({accessToken});
     }
     catch(err){
@@ -67,7 +74,7 @@ router.post('/login', async (req, res, next)=>{
             const accessToken = generateAccessToken({username, email: user.email, accountType: user.accountType});
             user.lastActive = Date.now();
             await user.save();
-            res.cookie('accessToken', accessToken);
+            res.cookie('accessToken', accessToken, cookieOptions);
             return res.json({accessToken});
         }
         else{
