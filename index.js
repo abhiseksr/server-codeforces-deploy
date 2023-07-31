@@ -15,7 +15,7 @@ const mongoose = require('mongoose');
 const User = require('./models/user');
 
 app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000'); // Replace with your React client's domain and port
+    res.setHeader('Access-Control-Allow-Origin', "https://codehorses.onrender.com/api"); // Replace with your React client's domain and port
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Access-Control-Allow-Credentials', 'true'); // If you need to include cookies in cross-origin requests
