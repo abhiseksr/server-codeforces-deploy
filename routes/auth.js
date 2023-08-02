@@ -24,7 +24,7 @@ const cookieOptions = {
 function authenticateToken(req, res, next) {
     // console.log(req.cookies);
     // res.send('hi');
-    next();
+    // next();
     const {accessToken: token} = req.cookies;
     // console.log(token);
     if (token == null) return res.sendStatus(401)
