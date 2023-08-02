@@ -12,6 +12,7 @@ const {userRouter, runInterval, updateLastActive} = require('./routes/user');
 const methodOverride = require("method-override");
 const cors = require("cors");
 const mongoose = require('mongoose');
+const AppError = require("./routes/AppError");
 const User = require('./models/user');
 
 app.use((req, res, next) => {
@@ -34,6 +35,11 @@ mongoose.connect(process.env.MONGO_URI,{
 .catch((err)=>{
     console.log("ERROR! NO DATABASE CONNECTION");
     next(err);
+})
+
+app.use((req,res,next)=>{
+    if (req.method!='GET') throw new AppError("The request other than GET are deliberately refused for now, you are only permitted to view the website. Use username=abhishek & password=deathnote for authentication.", 403);
+    next();
 })
 
 app.use('/api', authRouter);
