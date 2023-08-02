@@ -7,7 +7,6 @@ const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const AppError = require("./AppError");
-
 router.use(express.urlencoded({extended: true}));
 router.use(express.json());
 router.use(cookieParser());
@@ -54,7 +53,7 @@ router.post('/register',async (req,res, next)=>{
         const user = new User({username, password: await getHashedPassword(password), email, accountType});
         await user.save();
         const accessToken = generateAccessToken({username, email, accountType});
-        res.cookie('accessToken', accessToken, cookieOptions);
+        // res.cookie('accessToken', accessToken, cookieOptions);
         res.json({accessToken});
     }
     catch(err){
@@ -77,7 +76,7 @@ router.post('/login', async (req, res, next)=>{
             const accessToken = generateAccessToken({username, email: user.email, accountType: user.accountType});
             user.lastActive = Date.now();
             await user.save();
-            res.cookie('accessToken', accessToken, cookieOptions);
+            // res.cookie('accessToken', accessToken, cookieOptions);
             return res.json({accessToken});
         }
         else{
