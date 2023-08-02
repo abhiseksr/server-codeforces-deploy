@@ -216,8 +216,8 @@ router.get('/contest/:contestID/register', authenticateToken, updateLastActive, 
 
 router.get('/allContests', authenticateToken, updateLastActive, async(req, res, next)=>{
     try{
-        const historyContests = await Contest.find({startsAt: {$lt: Date.now()}});
-        const upcommingContests = await Contest.find({startsAt: {$gte: Date.now()}});
+        const historyContests = await Contest.find({startsAt: {$lt: Date.now()-330*60*1000}});
+        const upcommingContests = await Contest.find({startsAt: {$gte: Date.now()-330*60*1000}});
         let history = [], upcomming = [];
         for (let contest of historyContests){
             let populatedContest = await contest.populate("authors");
@@ -242,7 +242,7 @@ router.get('/contest/:contestID/enter', authenticateToken, updateLastActive, asy
         const contest = await Contest.findById(contestID).populate("problems");
         let problems = contest.problems;
         contest.problems = [];
-        if (contest.startsAt>=Date.now())
+        if (contest.startsAt>=Date.now()-330*60*1000)
         return res.json({contest,problems:[]});
         problems.sort((a,b)=> a.code-b.code);
         return res.json({contest,problems});
