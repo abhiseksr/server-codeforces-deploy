@@ -122,6 +122,7 @@ router.put('/contest/:contestID/edit', authenticateToken, updateLastActive, chec
         req.body.authors = authors;
         await Contest.findByIdAndUpdate(contestID, req.body);
         const contest = await Contest.findById(contestID);
+        contest.startsAt = contest.startsAt.getTime()-60*1000*330;
         contest.endsAt = contest.startsAt.getTime() + contest.duration*60*1000;
         contest.authors = authors;
         // runAtDate(contest.startsAt, async()=>{
