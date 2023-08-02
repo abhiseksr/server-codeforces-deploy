@@ -17,7 +17,7 @@ const cookieOptions = {
     httpOnly: true, // The cookie cannot be accessed through client-side JavaScript
     secure: true, // The cookie will only be sent over HTTPS
     sameSite: 'None', // The cookie will be sent on cross-site requests
-    domain: 'codehorses-client.onrender.com', // The cookie will be accessible in every subdomain
+    domain: '.us.to', // The cookie will be accessible in every subdomain
     path: '/', // The cookie will be accessible on all paths
   };
 
