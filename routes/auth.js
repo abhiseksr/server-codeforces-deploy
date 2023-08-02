@@ -93,7 +93,7 @@ router.post('/login', async (req, res, next)=>{
 
 router.get('/logout', async (req, res, next)=>{
     try{
-        res.clearCookie('accessToken');
+        // res.clearCookie('accessToken');
         req.user = undefined;
         res.send('logged out successfully');
     }
@@ -119,7 +119,7 @@ router.post('/passwordRecovery', async(req, res, next)=>{
             from: 'abhishekkumartbbt@gmail.com',
             to: email,
             subject: 'Password Recovery',
-            html: `<p>Click the link below for password recovery:</p><a href="http://localhost:3000/updatePassword/${user._id}/${accessToken}">Click to recover your codeforces account</a>`
+            html: `<p>Click the link below for password recovery:</p><a href="https://codeforces.us.to/updatePassword/${user._id}/${accessToken}">Click to recover your codeforces account</a>`
         });
         // console.log('Email sent:', info.response);
         res.send('successfully send mail');
