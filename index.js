@@ -38,7 +38,7 @@ mongoose.connect(process.env.MONGO_URI,{
 })
 
 app.use((req,res,next)=>{
-    if (req.method!='GET') throw new AppError("The request other than GET are deliberately refused for now, you are only permitted to view the website. Use username=abhishek & password=deathnote for authentication.", 403);
+    if (req.method!='GET' && req.path!='/api/login') throw new AppError("The request other than GET are deliberately refused for now, you are only permitted to view the website. Use username=abhishek & password=deathnote for authentication.", 403);
     next();
 })
 
