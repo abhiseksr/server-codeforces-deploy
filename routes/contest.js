@@ -72,6 +72,7 @@ router.post('/contest', authenticateToken, updateLastActive, checkAccountType, a
         // console.log(Date.now());
         // console.log(contest.createdAt);
         // console.log(req.body);
+        contest.startsAt = contest.startsAt.getTime()-60*1000*330;
         contest.endsAt = contest.startsAt.getTime() + contest.duration*60*1000;
         // runAtDate(contest.startsAt, async()=>{
         //     contest.running = true;
