@@ -169,7 +169,6 @@ router.get('/submissions/:username', authenticateToken, updateLastActive, async 
         let verdicts = user.submissions;
         verdicts.reverse();
         problems.reverse();
-        console.log(verdicts)
         res.json({ problems, verdicts });
     }
     catch (err) {
