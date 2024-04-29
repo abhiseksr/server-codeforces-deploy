@@ -236,6 +236,22 @@ router.get('/allContests', authenticateToken, updateLastActive, async(req, res, 
     }
 })
 
+
+router.get('/contest/:contestID/edit', authenticateToken, updateLastActive, async(req,res,next)=>{
+    try{
+        const {contestID} = req.params;
+        const contest = await Contest.findById(contestID).populate("authors");
+        // console.log(contest)
+        authors = contest.authors.map(author=>author.username);
+        console.log(authors)
+        return res.json({name: contest.name, number: contest.number, authors: authors, startsAt: contest.startsAt, duration: contest.duration})
+    }
+    catch(err){
+        // console.log(err);
+        return next(err);
+    }
+})
+
 router.get('/contest/:contestID/enter', authenticateToken, updateLastActive, async(req, res, next)=>{
     try{
         const {contestID} = req.params;
