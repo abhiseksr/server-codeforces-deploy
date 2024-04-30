@@ -32,6 +32,12 @@ function authenticateToken(req, res, next) {
     //   console.log(err)
       if (err) return next(err);
       req.user = user
+      if (process.env.READ_ONLY_MODE){
+        if (req.url.includes('/api/login')){}
+        else if (req.method!='GET') {
+            return next(new AppError("System is in read only mode."))
+        }
+      }
       next()
     })
 }
@@ -49,6 +55,7 @@ async function getHashedPassword(password){
 router.post('/register',async (req,res, next)=>{
     try{
         // console.log(req.body);
+        if (process.env.READ_ONLY_MODE) return next(new AppError("System is in read only mode."))
         const {username, password, email, accountType = 'contestant'} = req.body;
         const user = new User({username, password: await getHashedPassword(password), email, accountType});
         await user.save();
@@ -104,6 +111,7 @@ router.get('/logout', async (req, res, next)=>{
 router.post('/passwordRecovery', async(req, res, next)=>{
     try{
         // console.log(req.body);
+        if (process.env.READ_ONLY_MODE) return next(new AppError("System is in read only mode."))
         const {username,email} = req.body;
         const user = await User.findOne({email,username});
         const transporter = nodemailer.createTransport({
@@ -130,6 +138,7 @@ router.post('/passwordRecovery', async(req, res, next)=>{
 
 router.patch('/updatePassword/:userId/:accessToken', async(req,res,next)=>{
     try{
+        if (process.env.READ_ONLY_MODE) return next(new AppError("System is in read only mode."))
         const {userId, accessToken: token} = req.params;
         jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
             // console.log(err)
@@ -151,6 +160,7 @@ router.patch('/updatePassword/:userId/:accessToken', async(req,res,next)=>{
 
 router.get('/updatePassword/:userId/:accessToken', async(req,res,next)=>{
     try{
+        if (process.env.READ_ONLY_MODE) return next(new AppError("System is in read only mode."))
         const {userId, accessToken: token} = req.params;
         res.json({userId, accessToken});
     }
