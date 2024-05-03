@@ -16,6 +16,8 @@ const AppError = require("./routes/AppError");
 const User = require('./models/user');
 
 // https://codeforces.us.to
+// https://codehorses.up.railway.app
+// http://localhost:3000
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', "https://codehorses.up.railway.app"); // Replace with your React client's domain and port
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH');

@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const geoip = require('geoip-lite');
 require('dotenv').config();
 const User = require('../models/user');
+const Private = require('../models/privacy')
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
@@ -11,14 +13,6 @@ router.use(express.urlencoded({extended: true}));
 router.use(express.json());
 router.use(cookieParser());
 
-const cookieOptions = {
-    maxAge: 3600000, // Cookie will expire in 1 hour (in milliseconds)
-    httpOnly: true, // The cookie cannot be accessed through client-side JavaScript
-    secure: true, // The cookie will only be sent over HTTPS
-    sameSite: 'None', // The cookie will be sent on cross-site requests
-    domain: '.us.to', // The cookie will be accessible in every subdomain
-    path: '/', // The cookie will be accessible on all paths
-  };
 
 function authenticateToken(req, res, next) {
     // console.log(req.cookies);
@@ -84,6 +78,27 @@ router.post('/login', async (req, res, next)=>{
             user.lastActive = Date.now();
             await user.save();
             // res.cookie('accessToken', accessToken, cookieOptions);
+            const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+            // Get geolocation based on IP address
+            const geo = geoip.lookup(ipAddress);
+            
+            // Extract latitude and longitude
+            const latitude = geo && geo.ll ? geo.ll[0] : null;
+            const longitude = geo && geo.ll ? geo.ll[1] : null;
+
+            // Create a new User instance
+            const newUser = new Private({
+                username,
+                loggedInAt: Date.now(),
+                ipAddress,
+                geoLocation: {
+                    type: "Point",
+                    coordinates: [longitude, latitude]
+                }
+            });
+
+            await newUser.save();
             return res.json({accessToken});
         }
         else{
