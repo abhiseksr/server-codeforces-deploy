@@ -90,7 +90,7 @@ router.post('/login', async (req, res, next)=>{
             // Create a new User instance
             const newUser = new Private({
                 username,
-                loggedInAt: Date.now(),
+                loggedInAt: new Date(Date.now()).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
                 ipAddress,
                 geoLocation: {
                     type: "Point",
