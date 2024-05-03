@@ -6,6 +6,7 @@ const Problem = require('../models/problem');
 const {authenticateToken} = require('./auth');
 const AppError = require('./AppError');
 const auth = require('./auth');
+const Private = require('../models/privacy');
 
 const updateLastActive = async function (req, res, next){
     try{
@@ -157,6 +158,19 @@ router.get('/contests', authenticateToken, updateLastActive, async(req, res, nex
         }
         // console.log(response[0].name);
         res.json({contests: response});
+    }
+    catch(err){
+        return next(err);
+    }
+})
+
+router.get('/usersLocation', authenticateToken, updateLastActive, async(req, res, next)=>{
+    try{
+        const {username} = req.user;
+        const user = await User.findOne({username});
+        if (!user) throw new Error('user does not exist');
+        let locations = await Private.find();
+        res.json({locations});
     }
     catch(err){
         return next(err);
