@@ -3,15 +3,7 @@ const {Schema} = mongoose;
 
 const privateSchema = Schema({
     username: {
-        type: String,
-        required: true,
-        unique: true,
-        validate: {
-          validator: function (value) {
-            return /^[a-zA-Z0-9_]+$/.test(value);
-          },
-          message: 'Username can only contain alphanumeric characters and underscores'
-        }
+        type: String
     },
     loggedInAt: {
         type: Date,
