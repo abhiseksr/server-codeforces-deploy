@@ -170,6 +170,7 @@ router.get('/usersLocation', authenticateToken, updateLastActive, async(req, res
         const user = await User.findOne({username});
         if (!user) throw new Error('user does not exist');
         let locations = await Private.find();
+        locations = locations.slice(-10).reverse()
         res.json({locations});
     }
     catch(err){
