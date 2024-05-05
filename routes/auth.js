@@ -20,11 +20,13 @@ function authenticateToken(req, res, next) {
     // next();
     const {accessToken: token} = req.cookies;
     // console.log(token);
-    if (token == null) return res.sendStatus(401)
+    if (token == null) {
+        return next(new AppError("Give your identity please"))
+    }
   
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
     //   console.log(err)
-      if (err) return next(err);
+      if (err) return next(new AppError("Session timed out"));
       req.user = user
       if (process.env.READ_ONLY_MODE==1){
         if (req.url.includes('/api/login')){}
