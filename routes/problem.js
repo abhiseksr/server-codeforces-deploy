@@ -65,14 +65,33 @@ router.get('/problem/:problemID', authenticateToken, updateLastActive, async(req
     }
 });
 
+
 router.get("/problems", authenticateToken, updateLastActive, async(req, res, next)=>{
     try{
         const problems = await Problem.find();
+        let params = req.query;
         let response = [];
-        // console.log(problems.length);
         for (let problem of problems){
-            const populatedProblem = await problem.populate("contestID");
-            if (populatedProblem.contestID.startsAt<Date.now()) response.push(populatedProblem);
+            let populatedProblem = await problem.populate("contestID");
+            if (populatedProblem.contestID.startsAt<Date.now()){
+                if ('operator' in params){
+                    let flag = 1;
+                    if ('tags' in params){
+                        if (params['operator']=='and'){
+                            flag = params['tags'].every(tag=>populatedProblem.tags.includes(tag));
+                        }
+                        else{
+                            flag = params['tags'].some(tag=>populatedProblem.tags.includes(tag));
+                        }
+                    }
+                    if (populatedProblem.difficulty>=parseInt(params["lowerRating"]) && populatedProblem.difficulty<=parseInt(params["upperRating"])){}
+                    else flag = 0;
+                    if (flag) response.push(populatedProblem);
+                }
+                else{
+                    response.push(populatedProblem);
+                }
+            }
         }
         res.json({problems: response});
     }

@@ -3,20 +3,10 @@ const Contest = require("./contest");
 const User = require("./user");
 const {Schema} = mongoose;
 
-const tagSchema = Schema({
-    type: [String],
-    enum: ['greedy', 'dp', 'trees', 'graphs', 'number theory',
-    'maths', 'brute force', 'implementation', 'backtracking', 'dsu',
-    'data structures', 'binary search', 'combinatorics', 'sortings',
-    'strings', 'two pointers', 'bitmasks', 'probabilities'],
-    default: []
-})
-
 const solutionSchema = Schema({
     language: Number,
     content: String
 })
-
 
 const problemSchema = Schema({
     code: { // problem A,B,etc
@@ -88,7 +78,12 @@ const problemSchema = Schema({
         default: 0
     },
     tags:{
-        tagSchema
+        type: [String],
+        enum: ['greedy', 'dp', 'trees', 'graphs', 'number theory',
+        'maths', 'brute force', 'implementation', 'backtracking', 'dsu',
+        'data structures', 'binary search', 'combinatorics', 'sortings',
+        'strings', 'two pointers', 'bitmasks', 'probabilities'],
+        default: []
     },
     solution: {
         type: solutionSchema,
