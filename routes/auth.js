@@ -53,10 +53,31 @@ router.post('/register',async (req,res, next)=>{
         // console.log(req.body);
         if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode."))
         const {username, password, email, accountType = 'contestant'} = req.body;
-        const user = new User({username, password: await getHashedPassword(password), email, accountType});
+        let user = await User.findOne({email,username});
+        // console.log(user)
+        if (user) return next(new AppError(`User with username ${username} and email ${email} is already registered. Please use other username.`))
+        if (accountType=="organiser"){
+            const transporter = nodemailer.createTransport({
+                service: 'Gmail',
+                auth: {
+                  user: 'abhishekkumartbbt@gmail.com',
+                  pass: process.env.GMAIL_APP_PASSWORD 
+                }
+            });
+            const accessToken = jwt.sign({username, email, accountType, password}, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '59m' });
+            const info = await transporter.sendMail({
+                from: 'abhishekkumartbbt@gmail.com',
+                to: 'abhishekkumartbbt@gmail.com',
+                subject: 'Company/organiser registration requires approval',
+                html: `<p>Click the link below for approving the request:</p><a href="${process.env.CLIENT}/approveOrganiserRegistration/${accessToken}">Click to approve organiser registration.</a></p>`
+            });
+            // console.log('Email sent:', info.response);
+            return res.send('successfully send mail');
+        }
+        user = new User({username, password: await getHashedPassword(password), email, accountType});
         await user.save();
         const accessToken = generateAccessToken({username, email, accountType});
-        // res.cookie('accessToken', accessToken, cookieOptions);
+        // res.cookie('accessToken', accessToken, cookieOptions);;
         res.json({accessToken});
     }
     catch(err){
@@ -143,10 +164,43 @@ router.post('/passwordRecovery', async(req, res, next)=>{
             from: 'abhishekkumartbbt@gmail.com',
             to: email,
             subject: 'Password Recovery',
-            html: `<p>Click the link below for password recovery:</p><a href="https://codeforces.us.to/updatePassword/${user._id}/${accessToken}">Click to recover your codeforces account</a>`
+            html: `<p>Click the link below for password recovery:</p><a href="${process.env.CLIENT}/updatePassword/${user._id}/${accessToken}">Click to recover your codeforces account</a></p>`
         });
         // console.log('Email sent:', info.response);
         res.send('successfully send mail');
+    }
+    catch(err){
+        return next(err);
+    }
+})
+
+router.post('/approveOrganiserRegistration/:accessToken', async(req,res,next)=>{
+    try{
+        if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode."))
+        const { accessToken: token} = req.params;
+        jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+            // console.log(err)
+            if (err) return res.sendStatus(403)
+            // console.log(user);
+            req.user = user
+        })
+        const {username, password, email, accountType} = req.user;
+        const user = new User({username, password: await getHashedPassword(password), email, accountType});
+        await user.save();
+        const transporter = nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+              user: 'abhishekkumartbbt@gmail.com',
+              pass: process.env.GMAIL_APP_PASSWORD 
+            }
+        });
+        const info = await transporter.sendMail({
+            from: 'abhishekkumartbbt@gmail.com',
+            to: user.email,
+            subject: 'Succeful registration to codehorses.up.railway.app',
+            html: `<p>You have registered as an Organiser. Please login:</p><a href="${process.env.CLIENT}/login">Codehorses</a></p>`
+        });
+        res.send(`Registration approval granted to ${user.username} and same is mailed to ${user.email}`);
     }
     catch(err){
         return next(err);
@@ -160,6 +214,7 @@ router.patch('/updatePassword/:userId/:accessToken', async(req,res,next)=>{
         jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
             // console.log(err)
             if (err) return res.sendStatus(403)
+            // console.log(user);
             req.user = user
         })
         const user = await User.findById(userId);
