@@ -69,10 +69,18 @@ router.get('/profile/:username', authenticateToken, updateLastActive, async (req
         const {username} = req.params;
         const user = await User.findOne({username});
         if (!user) throw new Error('user does not exist');
+        let problems = [];
+        for (let submission of user.submissions) {
+            const problem = await Problem.findById(submission.problemId);
+            problems.push(problem);
+        }
+        let verdicts = user.submissions;
+        verdicts.reverse();
+        problems.reverse();
         let liveUser = req.user.username;
         let accountType2 = await User.findOne({username: liveUser}).accountType;
         const {name, email, accountType, country, city, registeredAt, lastActive, organisation, birthDate, followers, following, online} = user;
-        res.json({liveUser, name, username, email, accountType, accountType2, registeredAt, lastActive, friends: following.length, country, city, organisation, birthDate, followers: followers.length, online});
+        res.json({problems, verdicts, liveUser, name, username, email, accountType, accountType2, registeredAt, lastActive, friends: following.length, country, city, organisation, birthDate, followers: followers.length, online});
     }
     catch(err){
         return next(err);
