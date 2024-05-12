@@ -44,6 +44,28 @@ const contestSchema = Schema({
             ref: 'User'
         }
     ],
+    shortlisted: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'User'
+        }
+    ],
+    acceptedTermsAndConditions:[
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'User'
+        }
+    ],
+    placedCandidates: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'User'
+        }
+    ],
+    round: {
+        type: String,
+        default: "Registration to Online Assesment"
+    },
     problems: [
         {
             type: Schema.Types.ObjectId,

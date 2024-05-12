@@ -196,18 +196,142 @@ router.post('/contest/:contestID/problem', authenticateToken, updateLastActive, 
 router.get('/contest/:contestID/register', authenticateToken, updateLastActive, async(req, res,next)=>{
     try{
         const {contestID} = req.params;
-        if (req.user.accountType!='contestant') throw new AppError('you are not a contestant',500);
+        if (req.user.accountType!='contestant') throw new AppError('You are not a contestant',500);
         const contest = await Contest.findById(contestID);
         const user = await User.findOne({username: req.user.username});
-        if (Date.now()>contest.startsAt) throw new AppError('contest is already started! cannot register.', 500);
-        if (contest.registrations.includes(user._id)) throw new AppError("user already registered", 500);
+        if (Date.now()>contest.startsAt) throw new AppError('Contest is already started! cannot register.', 500);
+        if (contest.registrations.includes(user._id)) throw new AppError("User already registered", 500);
+        if (user.selected) throw new AppError("You are already placed");
+        const company  = await User.findById(contest.authors[0]);
+        // console.log(company);
+        // console.log(new Date(company.companyProfile.applicationDeadline));
+        // console.log(new Date(Date.now()));
+        if (!contest.acceptedTermsAndConditions.includes(user._id)) throw new AppError("Please accept terms and conditions of the company first");
+        if (Date.now()>=company.companyProfile.applicationDeadline) throw new AppError("The deadline for application has expired")
         contest.registrations.push(user._id);
+        contest.shortlisted.push(user._id);
         const tempObj = {participant: user._id, submissions: []};
         contest.leaderBoard.push(tempObj);
         user.contests.push(contest._id);
         await contest.save();
         await user.save();
         res.send("successfully registered");
+    }
+    catch(err){
+        return next(err);
+    }
+})
+
+router.put('/contest/:contestID/acceptTermsAndConditions', authenticateToken, updateLastActive, async(req, res,next)=>{
+    try{
+        const {contestID} = req.params;
+        if (req.user.accountType!='contestant') throw new AppError('You are not a contestant',500);
+        const contest = await Contest.findById(contestID);
+        const user = await User.findOne({username: req.user.username});
+        if (Date.now()>contest.startsAt) throw new AppError('Contest is already started!.', 500);
+        if (contest.acceptedTermsAndConditions.includes(user._id)) throw new AppError("User already accepted T&C", 500);
+        // const company  = await User.findById(contest.authors[0]);
+        // console.log(company);
+        // console.log(new Date(company.companyProfile.applicationDeadline));
+        // console.log(new Date(Date.now()));
+
+        contest.acceptedTermsAndConditions.push(user);
+        await contest.save();
+        res.send("Accepted terms and conditions");
+    }
+    catch(err){
+        return next(err);
+    }
+})
+
+router.put('/contest/:contestID/shortlist', authenticateToken, updateLastActive, async(req, res,next)=>{
+    try{
+        const {contestID} = req.params;
+        if (req.user.accountType!='organiser') throw new AppError('You are not an organiser',500);
+        const contest = await Contest.findById(contestID);
+        const company  = await User.findById(contest.authors[0]);
+        if (company.companyProfile.username!=req.user.username) throw new AppError("You need to be the primary author to perform this action, auditors are forbidden")
+        // console.log(company);
+        // console.log(new Date(company.companyProfile.applicationDeadline));
+        // console.log(new Date(Date.now()));
+        const {shortlisted, selected, topx, round} = req.body;
+        let standings = [];
+        const leaderBoard = contest.leaderBoard;
+        for (let user of leaderBoard){
+            const usr = await User.findById(user.participant);
+            let obj = {acceptedCount: 0, points: 0, username: usr.username, userId: user.participant, isSelected: usr.selected};
+            for (let submission of user.submissions){
+                const problem = await Problem.findById(submission.problemId);
+                // console.log(problem);
+                if (submission.status.id==3){
+                    obj.acceptedCount = obj.acceptedCount + 1;
+                    // console.log(problem.scores, Date.now()-contest.startsAt, problem.scoreDecreaseRate, submission.created_at);
+                    obj.points = obj.points + Math.max(300, problem.scores-((new Date(submission.created_at).getTime()-contest.startsAt.getTime())/60000)*problem.scoreDecreaseRate);
+                }
+            }
+            standings.push(obj);
+        }
+        // console.log(standings);
+        standings.sort((a,b)=>{
+            if (a.acceptedCount==b.acceptedCount) return b.points - a.points;
+            return b.acceptedCount - a.acceptedCount;
+        })
+        let shortlistDoc = [], count = 0, idxStandings = 0;
+        for (let record of standings){
+            if (count>=topx || idxStandings>=standings.length){
+                break;
+            }
+            // console.log(record.isSelected);
+            if (!record.isSelected){
+                shortlistDoc.push(record.username);
+                count += 1;
+            }
+            idxStandings += 1;
+        }
+        for (let candidate of shortlisted){
+            if (!shortlistDoc.includes(candidate)){
+                shortlistDoc.push(candidate)
+            }
+        }
+        // console.log(req.body);
+        // console.log(standings);
+        // console.log(shortlistDoc);
+        let shortlistDocWithObjId = []
+        for (let candidate of shortlistDoc){
+            let tempuser = await User.findOne({username: candidate});
+            shortlistDocWithObjId.push(tempuser._id)
+        }
+        contest.shortlisted = shortlistDocWithObjId;
+        // console.log(contest.shortlisted);
+        for (let select of selected){
+            let user = await User.findOne({username: select});
+            if (!user.selected){
+                user.selected = true;
+                if (!contest.placedCandidates || !contest.placedCandidates.includes(user._id)){
+                    contest.placedCandidates.push(user._id);
+                }
+                user.placedAt = company._id;
+                await user.save();
+            }
+        }
+        contest.round = round;
+        await contest.save();
+        res.send("Shortlisting successfull");
+    }
+    catch(err){
+        return next(err);
+    }
+})
+
+router.get('/contest/:contestID/acceptTermsAndConditions', authenticateToken, updateLastActive, async(req, res,next)=>{
+    try{
+        const {contestID} = req.params;
+        const contest = await Contest.findById(contestID).populate("placedCandidates");
+        const company  = await User.findById(contest.authors[0]);
+        // console.log(company);
+        // console.log(new Date(company.companyProfile.applicationDeadline));
+        // console.log(new Date(Date.now()));
+        res.json({...company.companyProfile, selectedCandidates: contest.placedCandidates})
     }
     catch(err){
         return next(err);
@@ -243,7 +367,7 @@ router.get('/contest/:contestID/edit', authenticateToken, updateLastActive, asyn
         const contest = await Contest.findById(contestID).populate("authors");
         // console.log(contest)
         authors = contest.authors.map(author=>author.username);
-        console.log(authors)
+        // console.log(authors)
         return res.json({name: contest.name, number: contest.number, authors: authors, startsAt: contest.startsAt, duration: contest.duration})
     }
     catch(err){
@@ -301,13 +425,15 @@ router.get('/contest/:contestID/announcement', updateLastActive, async(req,res,n
     try{
         const {contestID} = req.params;
         const contest = await Contest.findById(contestID);
+        let author = contest.authors[0];
+        const company = await User.findById(author._id).populate("companyProfile");
         let usernames = [];
         for (let comment of contest.comments){
             const user = await User.findById(comment.author);
             usernames.push(user.username);
 
         }
-        res.json({contest, usernames});
+        res.json({contest, usernames, companyName: company.companyProfile.companyName});
     }
     catch(err){
         return next(err);
@@ -347,12 +473,12 @@ router.get('/contest/:contestID/upvote', authenticateToken, updateLastActive, as
 router.get('/contest/:contestID/standings', authenticateToken, updateLastActive, async(req, res,next)=>{
     try{
         const {contestID} = req.params;
-        const contest = await Contest.findById(contestID);
+        const contest = await Contest.findById(contestID).populate("shortlisted");
         let standings = [];
         const leaderBoard = contest.leaderBoard;
         for (let user of leaderBoard){
             const usr = await User.findById(user.participant);
-            let obj = {acceptedCount: 0, points: 0, username: usr.username, userId: user.participant};
+            let obj = {acceptedCount: 0, points: 0, username: usr.username, userId: user.participant, isSelected: usr.selected};
             for (let submission of user.submissions){
                 const problem = await Problem.findById(submission.problemId);
                 // console.log(problem);
@@ -370,7 +496,14 @@ router.get('/contest/:contestID/standings', authenticateToken, updateLastActive,
             return b.acceptedCount - a.acceptedCount;
         })
         // console.log(standings);
-        res.json({standings});
+        let selected = [];
+        // console.log(standings);
+        for (let user of standings){
+            if (user.isSelected){
+                selected.push(user.username);
+            }
+        }
+        res.json({standings, selected, shortlisted: contest.shortlisted.map(e=>e.username), round: contest.round});
     }
     catch(err){
         return next(err);

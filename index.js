@@ -37,6 +37,7 @@ mongoose.connect(process.env.MONGO_URI,{
 })  
 .catch((err)=>{
     console.log("ERROR! NO DATABASE CONNECTION");
+    // console.log(err)
     next(err);
 })
 

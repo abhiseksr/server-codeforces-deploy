@@ -53,9 +53,9 @@ router.post('/register',async (req,res, next)=>{
         // console.log(req.body);
         if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode."))
         const {username, password, email, accountType = 'contestant'} = req.body;
-        let user = await User.findOne({email,username});
+        let user = await User.findOne({username});
         // console.log(user)
-        if (user) return next(new AppError(`User with username ${username} and email ${email} is already registered. Please use other username.`))
+        if (user) return next(new AppError(`User with username ${username} is already registered. Please use other username.`))
         if (accountType=="organiser"){
             const transporter = nodemailer.createTransport({
                 service: 'Gmail',
@@ -74,7 +74,7 @@ router.post('/register',async (req,res, next)=>{
             // console.log('Email sent:', info.response);
             return res.send('successfully send mail');
         }
-        user = new User({username, password: await getHashedPassword(password), email, accountType});
+        user = new User({username, password: await getHashedPassword(password), email, accountType, profile: {username: username}});
         await user.save();
         const accessToken = generateAccessToken({username, email, accountType});
         // res.cookie('accessToken', accessToken, cookieOptions);;
@@ -185,7 +185,7 @@ router.post('/approveOrganiserRegistration/:accessToken', async(req,res,next)=>{
             req.user = user
         })
         const {username, password, email, accountType} = req.user;
-        const user = new User({username, password: await getHashedPassword(password), email, accountType});
+        const user = new User({username, password: await getHashedPassword(password), email, accountType, companyProfile: {username: username}});
         await user.save();
         const transporter = nodemailer.createTransport({
             service: 'Gmail',

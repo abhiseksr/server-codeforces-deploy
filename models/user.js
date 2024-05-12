@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Contest = require("./contest");
 const Problem = require("./problem");
+const {profileSchema, companyProfileSchema} = require("./profile")
 const {Schema} = mongoose;
 
 const messageSchema = Schema({
@@ -21,6 +22,7 @@ const messageSchema = Schema({
         default: Date.now
     },
 })
+
 
 const commentSchema = Schema({
     comment: {
@@ -76,6 +78,19 @@ const userSchema = Schema({
         type: String,
         default: 'contestant',
         enum: ['contestant', 'organiser'],
+    },
+    profile: {
+        type: profileSchema,
+    },
+    companyProfile: {
+        type: companyProfileSchema
+    },
+    selected: {
+        type: Boolean
+    },
+    placedAt: {
+        type: Schema.Types.ObjectId,
+        ref: 'User'
     },
     contests: [
         {

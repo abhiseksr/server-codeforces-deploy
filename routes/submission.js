@@ -57,7 +57,7 @@ const judge = async function (solution, language, expectedOutput, tests, timeLim
         // console.log(response.data);
         return response.data.token;
     } catch (error) {
-        console.log(error);
+        // console.log(error);
     }
 }
 

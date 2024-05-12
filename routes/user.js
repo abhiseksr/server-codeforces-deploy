@@ -6,6 +6,7 @@ const Problem = require('../models/problem');
 const {authenticateToken} = require('./auth');
 const AppError = require('./AppError');
 const auth = require('./auth');
+const {profileSchema, companyProfileSchema} = require('../models/profile')
 const Private = require('../models/privacy');
 
 const updateLastActive = async function (req, res, next){
@@ -45,7 +46,7 @@ const updateOnlineStatus = async function(){
         );
     }
     catch(err){
-        console.log(err);
+        // console.log(err);
     }
 }
 
@@ -68,6 +69,11 @@ router.get('/profile/:username', authenticateToken, updateLastActive, async (req
     try{
         const {username} = req.params;
         const user = await User.findOne({username});
+        let company = undefined;
+        if (user.selected){
+            company = await User.findById(user.placedAt).populate("companyProfile");
+        }
+        // console.log(company)
         if (!user) throw new Error('user does not exist');
         let problems = [];
         for (let submission of user.submissions) {
@@ -80,7 +86,21 @@ router.get('/profile/:username', authenticateToken, updateLastActive, async (req
         let liveUser = req.user.username;
         let accountType2 = await User.findOne({username: liveUser}).accountType;
         const {name, email, accountType, country, city, registeredAt, lastActive, organisation, birthDate, followers, following, online} = user;
-        res.json({problems, verdicts, liveUser, name, username, email, accountType, accountType2, registeredAt, lastActive, friends: following.length, country, city, organisation, birthDate, followers: followers.length, online});
+        res.json({problems, verdicts, liveUser, name, username, email, accountType, accountType2, registeredAt, lastActive, friends: following.length, country, city, organisation, birthDate, followers: followers.length, online, companyName: company && company.companyProfile.companyName, isPlaced: user.selected});
+    }
+    catch(err){
+        return next(err);
+    }
+})
+
+router.get('/candidateProfile/:username', authenticateToken, updateLastActive, async (req, res,next)=>{
+    try{
+        const {username} = req.params;
+        // console.log(username);
+        const user = await User.findOne({username});
+        if (user.accountType=="organiser") throw new AppError("Organisers do not have candidate profiles")
+        // console.log(user);
+        res.json(user.profile);
     }
     catch(err){
         return next(err);
@@ -129,7 +149,7 @@ router.get('/profile/:username/addFriend', authenticateToken, updateLastActive, 
         const user1 = await User.findOne({username: username1});
         const user2 = await User.findOne({username: username2})
         if (!user1.following.includes(user2._id) && user1.username!==user2.username){
-            console.log(user1, user2);
+            // console.log(user1, user2);
             user1.following.push(user2);
             user2.followers.push(user1);
             await user1.save();
@@ -205,7 +225,9 @@ router.get('/', authenticateToken, updateLastActive, async(req, res, next)=>{
         let response = [];
         for (let contest of contests){
             let {name, number, announcement, _id, upvotes, comments, startsAt} = contest;
-            response.push({name, number, announcement, _id, upvotes: upvotes.length, comments: comments.length, startsAt});
+            let author = contest.authors[0];
+            const company = await User.findById(author._id).populate("companyProfile");
+            response.push({name, number, announcement, _id, upvotes: upvotes.length, comments: comments.length, startsAt, companyName: company.companyProfile.companyName, companyId: company._id});
         }
         res.json({contests: response});
     }
@@ -218,10 +240,16 @@ router.get('/settings', authenticateToken, updateLastActive, async(req,res,next)
     try{
         const {username} = req.user;
         if (!username) throw new Error('user not logged in');
-        const user = await User.findOne({username});
+        const user = await User.findOne({username}).populate('profile').populate("companyProfile");
         if (!user) throw new Error('user does not exist');
-        const {name, city, organisation, country, birthDate} = user;
-        res.json({name, city, organisation, country, birthDate});
+        const {name, city, organisation, country, birthDate, profile, companyProfile} = user;
+        // console.log(profile);
+        if (user.accountType=='contestant'){
+            res.json({name, accountType: user.accountType, city, organisation, birthDate, ...profile});
+        }
+        else{
+            res.json({name, accountType: user.accountType, ...companyProfile});
+        }
     }
     catch(err){
         // console.log(err);
@@ -232,16 +260,80 @@ router.get('/settings', authenticateToken, updateLastActive, async(req,res,next)
 router.put('/settings', authenticateToken, updateLastActive, async(req, res, next)=>{
     try{
         const {username} = req.user;
-        console.log("hello");
-        const {name, city, organisation, country, birthDate} = req.body;
         if (!username) throw new Error('user not logged in');
         const user = await User.findOne({username});
         if (!user) throw new Error('user does not exist');
-        await User.findOneAndUpdate({username}, {name, city, organisation, country, birthDate}, {runValidators: true});
+        // console.log("hello");
+        if (user.accountType=="contestant"){
+            const {name, city, organisation, country, birthDate, email, yearOfStudy,
+                department,
+                address,
+                phone,
+                speakingLanguages,
+                skills,
+                githubProfile,
+                linkedInProfile,
+                availability,
+                tShirtSize,
+                cgpa,
+                preferredCommunication,
+                resume,
+                otherInterests,
+                projectPortfolio} = req.body;
+            const profile = {
+                fullName: name,
+                email,
+                username,
+                collegeName: organisation,
+                yearOfStudy,
+                department,
+                country,
+                address,
+                phone,
+                speakingLanguages,
+                cgpa,
+                skills,
+                githubProfile,
+                linkedInProfile,
+                availability,
+                tShirtSize,
+                preferredCommunication,
+                resume,
+                otherInterests,
+                projectPortfolio
+            }
+            await User.findOneAndUpdate({username}, {name, city, organisation, country, birthDate, profile}, {runValidators: true});
+        }
+        else{
+            const {email,
+                phone,
+                username,
+                companyName,
+                package,
+                jobTitle,
+                jobDescription,
+                applicationDeadline,
+                termsOfAgreement,
+                workLocations
+                } = req.body;
+            const companyProfile = {
+                email,
+                username,
+                phone,
+                companyName,
+                package,
+                jobTitle,
+                jobDescription,
+                applicationDeadline,
+                termsOfAgreement,
+                workLocations
+            }
+            await User.findOneAndUpdate({username}, {companyProfile}, {runValidators: true});
+        }
         res.json({'status': 'successfully updated settings'});
     }
     catch(err){
-        console.log(err);
+        // console.log(err);
         return next(err);
     }
 })
