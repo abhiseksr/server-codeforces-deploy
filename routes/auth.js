@@ -99,42 +99,6 @@ router.post('/login', async (req, res, next)=>{
         if (verified){
             const accessToken = generateAccessToken({username, email: user.email, accountType: user.accountType});
             user.lastActive = Date.now();
-            user.profile = {
-                username: "JohnDoe",
-                fullName: "John Doe",
-                email: "johndoe@example.com",
-                collegeName: "Example University",
-                yearOfStudy: "Final Year",
-                department: "Computer Science",
-                country: "India",
-                address: "123 Main Street, City, State",
-                phone: "123-456-7890",
-                speakingLanguages: "English",
-                skills: "JavaScript, Python, HTML, CSS",
-                githubProfile: "https://github.com/johndoe",
-                linkedInProfile: "https://linkedin.com/in/johndoe",
-                availability: "Full-time",
-                cgpa: 8.5,
-                tShirtSize: "M",
-                preferredCommunication: "Email",
-                resume: "https://example.com/johndoe/resume",
-                otherInterests: "Reading, Hiking",
-                projectPortfolio: "https://example.com/johndoe/projects"
-            };
-            user.selected = false;
-            user.companyProfile = {
-                username: "CompanyX",
-                companyId: "e6799e5d-8d57-4b14-baad-0446f5ebf5ab",
-                companyName: "Company X",
-                email: "contact@companyx.com",
-                phone: "123-456-7890",
-                workLocations: "Remote",
-                termsOfAgreement: "Standard terms",
-                package: "Competitive",
-                jobTitle: "Software Engineer",
-                jobDescription: "We are looking for a skilled software engineer to join our team...",
-                applicationDeadline: new Date("2024-06-30")
-            };
             await user.save();
             // res.cookie('accessToken', accessToken, cookieOptions);
             const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;

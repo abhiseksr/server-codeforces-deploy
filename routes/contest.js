@@ -125,8 +125,6 @@ router.put('/contest/:contestID/edit', authenticateToken, updateLastActive, chec
         contest.startsAt = contest.startsAt.getTime()-60*1000*330;
         contest.endsAt = contest.startsAt.getTime() + contest.duration*60*1000;
         contest.authors = authors;
-        contest.acceptedTermsAndConditions = [];
-        contest.round = "";
         // runAtDate(contest.startsAt, async()=>{
         //     contest.running = true;
         //     await contest.save();
