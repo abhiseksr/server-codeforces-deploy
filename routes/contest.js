@@ -228,6 +228,7 @@ router.put('/contest/:contestID/acceptTermsAndConditions', authenticateToken, up
         if (req.user.accountType!='contestant') throw new AppError('You are not a contestant',500);
         const contest = await Contest.findById(contestID);
         const user = await User.findOne({username: req.user.username});
+        if (user.selected==true) throw new AppError('You are already placed')
         if (Date.now()>contest.startsAt) throw new AppError('Contest is already started!.', 500);
         if (contest.acceptedTermsAndConditions.includes(user._id)) throw new AppError("User already accepted T&C", 500);
         // const company  = await User.findById(contest.authors[0]);
