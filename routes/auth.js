@@ -121,6 +121,7 @@ router.post('/login', async (req, res, next)=>{
                 otherInterests: "Reading, Hiking",
                 projectPortfolio: "https://example.com/johndoe/projects"
             };
+            user.selected = false;
             user.companyProfile = {
                 username: "CompanyX",
                 companyId: "e6799e5d-8d57-4b14-baad-0446f5ebf5ab",
