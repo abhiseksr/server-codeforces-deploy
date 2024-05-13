@@ -192,14 +192,20 @@ router.get('/contests', authenticateToken, updateLastActive, async (req, res, ne
     }
 })
 
-router.get('/usersLocation', authenticateToken, updateLastActive, async (req, res, next) => {
+router.get('/contest/:contestID/usersLocation', authenticateToken, updateLastActive, async (req, res, next) => {
     try {
-        const { username } = req.user;
-        const user = await User.findOne({ username });
-        if (!user) throw new Error('user does not exist');
-        let locations = await Private.find();
-        locations = locations.slice(-10).reverse()
-        res.json({ locations });
+        const { contestID } = req.params;
+        const contest = await Contest.findById(contestID);
+        const company = await User.findById(contest.authors[0]._id);
+        if (req.user.username!=company.username) throw new AppError("Only company author is permitted to this route");
+        let locations = [];
+        if (company.companyProfile.monitorCandidatesLocation==0) res.json({locations});
+        for (let userId of contest.registrations){
+            const user = await User.findById(userId);
+            const {latitude, longitude} = user;
+            locations.push({username:user.username, latitude, longitude});
+        }
+        res.json({ locations, contestID });
     }
     catch (err) {
         return next(err);
@@ -332,7 +338,7 @@ router.put('/settings', authenticateToken, updateLastActive, async (req, res, ne
                 cgpaCutOff,
                 monitorCandidatesLocation
             }
-            console.log(new Date(applicationDeadline));
+            // console.log(new Date(applicationDeadline));
             await User.findOneAndUpdate({ username }, { companyProfile }, { runValidators: true });
         }
         res.json({ 'status': 'successfully updated settings' });

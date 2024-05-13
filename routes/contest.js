@@ -455,6 +455,23 @@ router.put('/contest/:contestID/announcement', authenticateToken, updateLastActi
     }
 })
 
+router.put('/contest/:contestID/updateLocation', authenticateToken, updateLastActive, async(req,res,next)=>{
+    try{
+        const {username} = req.user;
+        // console.log(req.body);
+        // console.log(req.user);
+        const user = await User.findOne({username});
+        const {latitude, longitude} = req.body;
+        user.latitude = latitude;
+        user.longitude = longitude;
+        await user.save();
+    }
+    catch(err){
+        // console.log(err);
+        return next(err);
+    }
+})
+
 
 router.get('/contest/:contestID/upvote', authenticateToken, updateLastActive, async(req, res, next)=>{
     try{

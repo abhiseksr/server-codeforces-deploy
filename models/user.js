@@ -154,6 +154,14 @@ const userSchema = Schema({
     registeredAt: {
         type: Date,
         default: Date.now
+    },
+    latitude: {
+        type: Number,
+        default: -1
+    },
+    longitude: {
+        type: Number,
+        default: -1
     }
 })
 

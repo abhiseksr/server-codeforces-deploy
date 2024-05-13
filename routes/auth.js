@@ -101,27 +101,6 @@ router.post('/login', async (req, res, next)=>{
             user.lastActive = Date.now();
             await user.save();
             // res.cookie('accessToken', accessToken, cookieOptions);
-            const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-
-            // Get geolocation based on IP address
-            const geo = geoip.lookup(ipAddress);
-            
-            // Extract latitude and longitude
-            const latitude = geo && geo.ll ? geo.ll[0] : null;
-            const longitude = geo && geo.ll ? geo.ll[1] : null;
-
-            // Create a new User instance
-            const newUser = new Private({
-                username,
-                loggedInAt: Date.now(),
-                ipAddress,
-                geoLocation: {
-                    type: "Point",
-                    coordinates: [longitude, latitude]
-                }
-            });
-
-            await newUser.save();
             return res.json({accessToken});
         }
         else{
