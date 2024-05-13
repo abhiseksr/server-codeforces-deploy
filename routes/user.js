@@ -3,74 +3,74 @@ const router = express.Router();
 const User = require('../models/user');
 const Contest = require('../models/contest');
 const Problem = require('../models/problem');
-const {authenticateToken} = require('./auth');
+const { authenticateToken } = require('./auth');
 const AppError = require('./AppError');
 const auth = require('./auth');
-const {profileSchema, companyProfileSchema} = require('../models/profile')
+const { profileSchema, companyProfileSchema } = require('../models/profile')
 const Private = require('../models/privacy');
 
-const updateLastActive = async function (req, res, next){
-    try{
+const updateLastActive = async function (req, res, next) {
+    try {
         if (!req.user) return next();
-        const {username} = req.user;
-        const user = await User.findOne({username});
+        const { username } = req.user;
+        const user = await User.findOne({ username });
         user.lastActive = Date.now();
         await user.save();
         return next();
     }
-    catch(err){
+    catch (err) {
         return next(err);
     }
 }
 
-const intervalTime = 20*1000;
+const intervalTime = 20 * 1000;
 
-const runInterval = ()=>{
-    setInterval(()=>{
+const runInterval = () => {
+    setInterval(() => {
         updateOnlineStatus();
     }, intervalTime);
 }
 
-const updateOnlineStatus = async function(){
-    try{
+const updateOnlineStatus = async function () {
+    try {
         // console.log('in updateOnlineStatus');
         // await Contest.updateMany({$and: [{startsAt: {$lte: Date.now()}}, {endsAt: {$gte: Date.now()}}]}, {$set: {running: true}}); 
         // await Contest.updateMany({$or: [{startsAt: {$gt: Date.now()}}, {endsAt: {$lt: Date.now()}}]}, {$set: {running: false}}); 
         await User.updateMany(
-            {lastActive: {$lt : Date.now()-5*60*1000}},
-            {$set: {online: false}}
+            { lastActive: { $lt: Date.now() - 5 * 60 * 1000 } },
+            { $set: { online: false } }
         );
         await User.updateMany(
-            {lastActive: {$gt : Date.now()-5*60*1000}},
-            {$set: {online: true}}
+            { lastActive: { $gt: Date.now() - 5 * 60 * 1000 } },
+            { $set: { online: true } }
         );
     }
-    catch(err){
+    catch (err) {
         // console.log(err);
     }
 }
 
-router.use(express.urlencoded({extended: true}));
+router.use(express.urlencoded({ extended: true }));
 router.use(express.json());
 
 
-router.get("/profile/liveUser", authenticateToken, updateLastActive, async(req, res, next)=>{
-    try{    
-        const {username} = req.user;
+router.get("/profile/liveUser", authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const { username } = req.user;
         // console.log("helelelel");
-        const user = await User.findOne({username});
-        res.json({liveUser: user.username, unseenNotifications: user.messages.length-user.seenNotificationsCount, accountType: user.accountType});
-    }   
-    catch(err){
+        const user = await User.findOne({ username });
+        res.json({ liveUser: user.username, unseenNotifications: user.messages.length - user.seenNotificationsCount, accountType: user.accountType });
+    }
+    catch (err) {
         return next(err);
     }
 })
-router.get('/profile/:username', authenticateToken, updateLastActive, async (req, res,next)=>{
-    try{
-        const {username} = req.params;
-        const user = await User.findOne({username});
+router.get('/profile/:username', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const { username } = req.params;
+        const user = await User.findOne({ username });
         let company = undefined;
-        if (user.selected){
+        if (user.selected) {
             company = await User.findById(user.placedAt).populate("companyProfile");
         }
         // console.log(company)
@@ -84,188 +84,188 @@ router.get('/profile/:username', authenticateToken, updateLastActive, async (req
         verdicts.reverse();
         problems.reverse();
         let liveUser = req.user.username;
-        let accountType2 = await User.findOne({username: liveUser}).accountType;
-        const {name, email, accountType, country, city, registeredAt, lastActive, organisation, birthDate, followers, following, online} = user;
-        res.json({problems, verdicts, liveUser, name, username, email, accountType, accountType2, registeredAt, lastActive, friends: following.length, country, city, organisation, birthDate, followers: followers.length, online, companyName: company && company.companyProfile.companyName, isPlaced: user.selected});
+        let accountType2 = await User.findOne({ username: liveUser }).accountType;
+        const { name, email, accountType, country, city, registeredAt, lastActive, organisation, birthDate, followers, following, online } = user;
+        res.json({ problems, verdicts, liveUser, name, username, email, accountType, accountType2, registeredAt, lastActive, friends: following.length, country, city, organisation, birthDate, followers: followers.length, online, companyName: company && company.companyProfile.companyName, isPlaced: user.selected });
     }
-    catch(err){
+    catch (err) {
         return next(err);
     }
 })
 
-router.get('/candidateProfile/:username', authenticateToken, updateLastActive, async (req, res,next)=>{
-    try{
-        const {username} = req.params;
+router.get('/candidateProfile/:username', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const { username } = req.params;
         // console.log(username);
-        const user = await User.findOne({username});
-        if (user.accountType=="organiser") throw new AppError("Organisers do not have candidate profiles")
+        const user = await User.findOne({ username });
+        if (user.accountType == "organiser") throw new AppError("Organisers do not have candidate profiles")
         // console.log(user);
         res.json(user.profile);
     }
-    catch(err){
+    catch (err) {
         return next(err);
     }
 })
 
-router.get('/multisearch/:query', authenticateToken, updateLastActive, async(req, res, next)=>{
-    try{
-        const {query} = req.params;
+router.get('/multisearch/:query', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const { query } = req.params;
         let list = [];
-        const users = await User.find({username: {$regex: query, $options: 'i'}});
-        for (let user of users){
-            list.push({type: 'User', title: user.username, id: user._id});
+        const users = await User.find({ username: { $regex: query, $options: 'i' } });
+        for (let user of users) {
+            list.push({ type: 'User', title: user.username, id: user._id });
         }
-        const contests = await Contest.find({name: {$regex: query, $options: 'i'}});
-        for (let contest of contests){
-            list.push({type: 'Contest', title: `${contest.name} #${contest.number}`, id: contest._id});
+        const contests = await Contest.find({ name: { $regex: query, $options: 'i' } });
+        for (let contest of contests) {
+            list.push({ type: 'Contest', title: `${contest.name} #${contest.number}`, id: contest._id });
         }
-        const problems = await Problem.find({name: {$regex: query, $options: 'i'}});
-        for (let problem of problems){
-            list.push({type: 'Problem', title: `${problem.code}. ${problem.name}`, id: problem._id});
+        const problems = await Problem.find({ name: { $regex: query, $options: 'i' } });
+        for (let problem of problems) {
+            list.push({ type: 'Problem', title: `${problem.code}. ${problem.name}`, id: problem._id });
         }
-        res.json({list});
+        res.json({ list });
     }
-    catch(err){
+    catch (err) {
         return next(err);
     }
 })
 
-router.get('/friends', authenticateToken, updateLastActive, async (req, res,next)=>{
-    try{
-        const {username} = req.user;
-        const user = await User.findOne({username}).populate("following");
+router.get('/friends', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const { username } = req.user;
+        const user = await User.findOne({ username }).populate("following");
         if (!user) throw new Error('user not logged in');
-        res.json({following: user.following});
+        res.json({ following: user.following });
     }
-    catch(err){
+    catch (err) {
         return next(err);
     }
 })
 
-router.get('/profile/:username/addFriend', authenticateToken, updateLastActive, async(req,res,next)=>{
-    try{
-        const {username: username1} = req.user;
-        const {username: username2} = req.params;
-        const user1 = await User.findOne({username: username1});
-        const user2 = await User.findOne({username: username2})
-        if (!user1.following.includes(user2._id) && user1.username!==user2.username){
+router.get('/profile/:username/addFriend', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const { username: username1 } = req.user;
+        const { username: username2 } = req.params;
+        const user1 = await User.findOne({ username: username1 });
+        const user2 = await User.findOne({ username: username2 })
+        if (!user1.following.includes(user2._id) && user1.username !== user2.username) {
             // console.log(user1, user2);
             user1.following.push(user2);
             user2.followers.push(user1);
             await user1.save();
             await user2.save();
         }
-        else{
+        else {
             throw new AppError("user already in friend or you can't friend yourself", 403);
         }
         res.send("added to friend list");
     }
-    catch(err){
+    catch (err) {
         return next(err);
     }
 })
 
-router.get('/contests', authenticateToken, updateLastActive, async(req, res, next)=>{
-    try{
-        const {username} = req.user;
-        const user = await User.findOne({username});
+router.get('/contests', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const { username } = req.user;
+        const user = await User.findOne({ username });
         if (!user) throw new Error('user does not exist');
         let response = [];
-        for (let contestID of user.contests){
+        for (let contestID of user.contests) {
             const contest = await Contest.findById(contestID);
             // console.log(contest);
-            for (let usr of contest.leaderBoard){
-                if (String(usr.participant)==String(user._id)){
+            for (let usr of contest.leaderBoard) {
+                if (String(usr.participant) == String(user._id)) {
                     let acceptedCount = 0;
                     for (let submission of usr.submissions)
-                    if (submission.status.id==3) acceptedCount = acceptedCount + 1;
+                        if (submission.status.id == 3) acceptedCount = acceptedCount + 1;
 
-                    response.push({name: contest.name, contestId: contestID, acceptedCount});
+                    response.push({ name: contest.name, contestId: contestID, acceptedCount });
                 }
             }
         }
         // console.log(response[0].name);
-        res.json({contests: response});
+        res.json({ contests: response });
     }
-    catch(err){
+    catch (err) {
         return next(err);
     }
 })
 
-router.get('/usersLocation', authenticateToken, updateLastActive, async(req, res, next)=>{
-    try{
-        const {username} = req.user;
-        const user = await User.findOne({username});
+router.get('/usersLocation', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const { username } = req.user;
+        const user = await User.findOne({ username });
         if (!user) throw new Error('user does not exist');
         let locations = await Private.find();
         locations = locations.slice(-10).reverse()
-        res.json({locations});
+        res.json({ locations });
     }
-    catch(err){
+    catch (err) {
         return next(err);
     }
 })
 
-router.get('/favourites', authenticateToken, updateLastActive, async(req, res ,next)=>{
-    try{
-        const {username} = req.user;
+router.get('/favourites', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const { username } = req.user;
         if (!username) throw new Error('user not logged in');
-        const user = await User.findOne({username}).populate('favourites');
+        const user = await User.findOne({ username }).populate('favourites');
         if (!user) throw new Error('user does not exist');
-        res.json({favourites: user.favourites});
+        res.json({ favourites: user.favourites });
     }
-    catch(err){
+    catch (err) {
         return next(err);
     }
 })
 
-router.get('/', authenticateToken, updateLastActive, async(req, res, next)=>{
-    try{
-        const contests = await Contest.find({endsAt: {$gt: Date.now()}}).sort({startsAt: 1});
+router.get('/', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const contests = await Contest.find({ endsAt: { $gt: Date.now() } }).sort({ startsAt: 1 });
         let response = [];
-        for (let contest of contests){
-            let {name, number, announcement, _id, upvotes, comments, startsAt} = contest;
+        for (let contest of contests) {
+            let { name, number, announcement, _id, upvotes, comments, startsAt } = contest;
             let author = contest.authors[0];
             const company = await User.findById(author._id).populate("companyProfile");
-            response.push({name, number, announcement, _id, upvotes: upvotes.length, comments: comments.length, startsAt, companyName: company.companyProfile.companyName, companyId: company._id});
+            response.push({ name, number, announcement, _id, upvotes: upvotes.length, comments: comments.length, startsAt, companyName: company.companyProfile.companyName, companyId: company._id });
         }
-        res.json({contests: response});
+        res.json({ contests: response });
     }
-    catch(err){
-        return  next(err);
+    catch (err) {
+        return next(err);
     }
 })
 
-router.get('/settings', authenticateToken, updateLastActive, async(req,res,next)=>{
-    try{
-        const {username} = req.user;
+router.get('/settings', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const { username } = req.user;
         if (!username) throw new Error('user not logged in');
-        const user = await User.findOne({username}).populate('profile').populate("companyProfile");
+        const user = await User.findOne({ username }).populate('profile').populate("companyProfile");
         if (!user) throw new Error('user does not exist');
-        const {name, city, organisation, country, birthDate, profile, companyProfile} = user;
+        const { name, city, organisation, country, birthDate, profile, companyProfile } = user;
         // console.log(profile);
-        if (user.accountType=='contestant'){
-            res.json({name, accountType: user.accountType, city, organisation, birthDate, ...profile});
+        if (user.accountType == 'contestant') {
+            res.json({ name, accountType: user.accountType, city, organisation, birthDate, ...profile });
         }
-        else{
-            res.json({name, accountType: user.accountType, ...companyProfile});
+        else {
+            res.json({ name, accountType: user.accountType, ...companyProfile });
         }
     }
-    catch(err){
+    catch (err) {
         // console.log(err);
         return next(err);
     }
 })
 
-router.put('/settings', authenticateToken, updateLastActive, async(req, res, next)=>{
-    try{
-        const {username} = req.user;
+router.put('/settings', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const { username } = req.user;
         if (!username) throw new Error('user not logged in');
-        const user = await User.findOne({username});
+        const user = await User.findOne({ username });
         if (!user) throw new Error('user does not exist');
         // console.log("hello");
-        if (user.accountType=="contestant"){
-            const {name, city, organisation, country, birthDate, email, yearOfStudy,
+        if (user.accountType == "contestant") {
+            const { name, city, organisation, country, birthDate, email, yearOfStudy,
                 department,
                 address,
                 phone,
@@ -279,7 +279,7 @@ router.put('/settings', authenticateToken, updateLastActive, async(req, res, nex
                 preferredCommunication,
                 resume,
                 otherInterests,
-                projectPortfolio} = req.body;
+                projectPortfolio } = req.body;
             const profile = {
                 fullName: name,
                 email,
@@ -302,10 +302,10 @@ router.put('/settings', authenticateToken, updateLastActive, async(req, res, nex
                 otherInterests,
                 projectPortfolio
             }
-            await User.findOneAndUpdate({username}, {name, city, organisation, country, birthDate, profile}, {runValidators: true});
+            await User.findOneAndUpdate({ username }, { name, city, organisation, country, birthDate, profile }, { runValidators: true });
         }
-        else{
-            const {email,
+        else {
+            const { email,
                 phone,
                 username,
                 companyName,
@@ -314,8 +314,10 @@ router.put('/settings', authenticateToken, updateLastActive, async(req, res, nex
                 jobDescription,
                 applicationDeadline,
                 termsOfAgreement,
-                workLocations
-                } = req.body;
+                workLocations,
+                cgpaCutOff,
+                monitorCandidatesLocation
+            } = req.body;
             const companyProfile = {
                 email,
                 username,
@@ -326,13 +328,16 @@ router.put('/settings', authenticateToken, updateLastActive, async(req, res, nex
                 jobDescription,
                 applicationDeadline,
                 termsOfAgreement,
-                workLocations
+                workLocations,
+                cgpaCutOff,
+                monitorCandidatesLocation
             }
-            await User.findOneAndUpdate({username}, {companyProfile}, {runValidators: true});
+            console.log(new Date(applicationDeadline));
+            await User.findOneAndUpdate({ username }, { companyProfile }, { runValidators: true });
         }
-        res.json({'status': 'successfully updated settings'});
+        res.json({ 'status': 'successfully updated settings' });
     }
-    catch(err){
+    catch (err) {
         // console.log(err);
         return next(err);
     }
@@ -340,16 +345,16 @@ router.put('/settings', authenticateToken, updateLastActive, async(req, res, nex
 
 // #################################UNCHECKED
 
-router.get('/comments/:username', authenticateToken, updateLastActive, async(req, res,next)=>{
-    try{
-        const {username} = req.params;
-        const user = await User.findOne({username});
+router.get('/comments/:username', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const { username } = req.params;
+        const user = await User.findOne({ username });
         if (!user) return res.send('user not found');
-        res.json({comments: user.comments});
+        res.json({ comments: user.comments });
     }
-    catch(err){
+    catch (err) {
         return next(err);
     }
 })
 
-module.exports = {userRouter: router, updateOnlineStatus, runInterval, updateLastActive};
+module.exports = { userRouter: router, updateOnlineStatus, runInterval, updateLastActive };

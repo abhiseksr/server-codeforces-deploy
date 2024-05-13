@@ -58,7 +58,9 @@ router.get('/problem/:problemID', authenticateToken, updateLastActive, async(req
     try{
         const {problemID} = req.params;
         const problem = await Problem.findById(problemID);
-        res.json({problem, username: req.user.username});
+        const contest = await Contest.findById(problem.contestID);
+        const company = await User.findById(contest.authors[0]._id);
+        res.json({problem, username: req.user.username, contestID: contest._id, monitorCandidatesLocation: company.companyProfile.monitorCandidatesLocation});
     }
     catch(err){
         return next(err);

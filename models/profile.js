@@ -105,6 +105,14 @@ const companyProfileSchema = Schema({
         type: String,
         default: "NOT FILLED"
     },
+    cgpaCutOff: {
+        type: Number,
+        default: 0
+    },
+    monitorCandidatesLocation: {
+        type: Number,
+        default: 0
+    },
     workLocations: {
         type: String,
         default: "NOT FILLED"
@@ -131,4 +139,4 @@ const companyProfileSchema = Schema({
     }
 });
 
-module.exports = {profileSchema, companyProfileSchema};
+module.exports = { profileSchema, companyProfileSchema };
