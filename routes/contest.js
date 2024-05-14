@@ -521,7 +521,14 @@ router.get('/contest/:contestID/standings', authenticateToken, updateLastActive,
                 selected.push(user.username);
             }
         }
-        res.json({standings, selected, shortlisted: contest.shortlisted.map(e=>e.username), round: contest.round});
+        const user = await User.findOne({username:req.user.username});
+        let isPrimaryAuthor = 0;
+        // console.log(user._id);
+        // console.log(contest.authors[0]._id);
+        if (String(user._id)==String(contest.authors[0]._id)) {
+            isPrimaryAuthor = 1;
+        }
+        res.json({isPrimaryAuthor, standings, selected, shortlisted: contest.shortlisted.map(e=>e.username), round: contest.round});
     }
     catch(err){
         return next(err);

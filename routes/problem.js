@@ -60,7 +60,8 @@ router.get('/problem/:problemID', authenticateToken, updateLastActive, async(req
         const problem = await Problem.findById(problemID);
         const contest = await Contest.findById(problem.contestID);
         const company = await User.findById(contest.authors[0]._id);
-        res.json({startsAt: contest.startsAt, endsAt: contest.endsAt, problem, username: req.user.username, contestID: contest._id, monitorCandidatesLocation: company.companyProfile.monitorCandidatesLocation});
+        // console.log(req.user);
+        res.json({accountType: req.user.accountType, startsAt: contest.startsAt, endsAt: contest.endsAt, problem, username: req.user.username, contestID: contest._id, monitorCandidatesLocation: company.companyProfile.monitorCandidatesLocation});
     }
     catch(err){
         return next(err);
