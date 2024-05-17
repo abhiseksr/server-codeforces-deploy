@@ -62,6 +62,11 @@ const contestSchema = Schema({
             ref: 'User'
         }
     ],
+    capturedProfiles: [
+        {
+            type: mongoose.Schema.Types.Mixed
+        }
+    ],
     round: {
         type: String,
         default: "Registration to Online Assesment"

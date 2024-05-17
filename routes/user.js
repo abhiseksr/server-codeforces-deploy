@@ -7,7 +7,6 @@ const { authenticateToken } = require('./auth');
 const AppError = require('./AppError');
 const auth = require('./auth');
 const { profileSchema, companyProfileSchema } = require('../models/profile')
-const Private = require('../models/privacy');
 
 const updateLastActive = async function (req, res, next) {
     try {
@@ -87,20 +86,6 @@ router.get('/profile/:username', authenticateToken, updateLastActive, async (req
         let accountType2 = await User.findOne({ username: liveUser }).accountType;
         const { name, email, accountType, country, city, registeredAt, lastActive, organisation, birthDate, followers, following, online } = user;
         res.json({ problems, verdicts, liveUser, name, username, email, accountType, accountType2, registeredAt, lastActive, friends: following.length, country, city, organisation, birthDate, followers: followers.length, online, companyName: company && company.companyProfile.companyName, isPlaced: user.selected });
-    }
-    catch (err) {
-        return next(err);
-    }
-})
-
-router.get('/candidateProfile/:username', authenticateToken, updateLastActive, async (req, res, next) => {
-    try {
-        const { username } = req.params;
-        // console.log(username);
-        const user = await User.findOne({ username });
-        if (user.accountType == "organiser") throw new AppError("Organisers do not have candidate profiles")
-        // console.log(user);
-        res.json(user.profile);
     }
     catch (err) {
         return next(err);
@@ -197,13 +182,13 @@ router.get('/contest/:contestID/usersLocation', authenticateToken, updateLastAct
         const { contestID } = req.params;
         const contest = await Contest.findById(contestID);
         const company = await User.findById(contest.authors[0]._id);
-        if (req.user.username!=company.username) throw new AppError("Only company author is permitted to this route");
+        if (req.user.username != company.username) throw new AppError("Only company author is permitted to this route");
         let locations = [];
-        if (company.companyProfile.monitorCandidatesLocation==0) res.json({locations});
-        for (let userId of contest.registrations){
+        if (company.companyProfile.monitorCandidatesLocation == 0) res.json({ locations });
+        for (let userId of contest.registrations) {
             const user = await User.findById(userId);
-            const {latitude, longitude} = user;
-            locations.push({username:user.username, latitude, longitude});
+            const { latitude, longitude } = user;
+            locations.push({ username: user.username, latitude, longitude });
         }
         res.json({ locations, contestID });
     }
@@ -322,7 +307,9 @@ router.put('/settings', authenticateToken, updateLastActive, async (req, res, ne
                 termsOfAgreement,
                 workLocations,
                 cgpaCutOff,
-                monitorCandidatesLocation
+                monitorCandidatesLocation,
+                eligibleBranches,
+                maxExcursion
             } = req.body;
             const companyProfile = {
                 email,
@@ -336,7 +323,9 @@ router.put('/settings', authenticateToken, updateLastActive, async (req, res, ne
                 termsOfAgreement,
                 workLocations,
                 cgpaCutOff,
-                monitorCandidatesLocation
+                monitorCandidatesLocation,
+                eligibleBranches,
+                maxExcursion
             }
             // console.log(new Date(applicationDeadline));
             await User.findOneAndUpdate({ username }, { companyProfile }, { runValidators: true });

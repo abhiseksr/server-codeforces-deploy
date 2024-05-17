@@ -3,7 +3,6 @@ const router = express.Router();
 const geoip = require('geoip-lite');
 require('dotenv').config();
 const User = require('../models/user');
-const Private = require('../models/privacy')
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');

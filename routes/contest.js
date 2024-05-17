@@ -134,13 +134,15 @@ router.put('/contest/:contestID/edit', authenticateToken, updateLastActive, chec
         //     await contest.save();
         // })
         await contest.save();
-        for (let author of authors) {
-            user = await User.findById(author)  
-            if (user.accountType=='organiser'){
-                user.contests.push(contest._id);
-                await user.save();
-            }
-        };
+        // user_contests = []
+        // for (let author of authors) {
+        //     user = await User.findById(author)  
+        //     if (user.accountType=='organiser'){
+        //         user_contests.push(contest._id);
+        //     }
+        // };
+        // user.contests = user_contests
+        await user.save();
         res.send('contest edited successfully');
     }
     catch(err){
@@ -228,14 +230,14 @@ router.put('/contest/:contestID/acceptTermsAndConditions', authenticateToken, up
         if (req.user.accountType!='contestant') throw new AppError('You are not a contestant',500);
         const contest = await Contest.findById(contestID);
         const user = await User.findOne({username: req.user.username});
+        const company = await User.findById(contest.authors[0]);
+        // console.log(company.companyProfile.eligibleBranches, )
+        if (!company.companyProfile.eligibleBranches.includes(user.profile.department)) throw new AppError("You are ineligible as your department is not enlisted in company profile")
+        if (user.profile.cgpa <= company.companyProfile.cgpaCutOff) throw new AppError("You are ineligible as your CGPA is less than required by the company");
         if (user.selected==true) throw new AppError('You are already placed')
         if (Date.now()>contest.startsAt) throw new AppError('Contest is already started!.', 500);
         if (contest.acceptedTermsAndConditions.includes(user._id)) throw new AppError("User already accepted T&C", 500);
-        // const company  = await User.findById(contest.authors[0]);
-        // console.log(company);
-        // console.log(new Date(company.companyProfile.applicationDeadline));
-        // console.log(new Date(Date.now()));
-
+        contest.capturedProfiles.push({userId: user._id, profile: user.profile});
         contest.acceptedTermsAndConditions.push(user);
         await contest.save();
         res.send("Accepted terms and conditions");

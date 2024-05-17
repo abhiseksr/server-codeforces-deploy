@@ -20,7 +20,7 @@ const profileSchema = Schema({
     },
     yearOfStudy: {
         type: String,
-        default: "NOT FILLED"
+        default: "1"
     },
     department: {
         type: String,
@@ -113,6 +113,14 @@ const companyProfileSchema = Schema({
         type: Number,
         default: 0
     },
+    eligibleBranches: {
+        type: [String],
+        default: []
+    },
+    maxExcursion: {
+        type: Number,
+        default: 100000000
+    },
     workLocations: {
         type: String,
         default: "NOT FILLED"
@@ -123,7 +131,7 @@ const companyProfileSchema = Schema({
     },
     package: {
         type: String,
-        default: "NOT FILLED"
+        default: "0"
     },
     jobTitle: {
         type: String,
