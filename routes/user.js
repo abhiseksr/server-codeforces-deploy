@@ -69,7 +69,7 @@ router.get('/profile/:username', authenticateToken, updateLastActive, async (req
         const { username } = req.params;
         const user = await User.findOne({ username });
         let company = undefined;
-        if (user.selected) {
+        if (user.selected==1) {
             company = await User.findById(user.placedAt).populate("companyProfile");
         }
         // console.log(company)

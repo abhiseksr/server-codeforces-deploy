@@ -86,7 +86,8 @@ const userSchema = Schema({
         type: companyProfileSchema
     },
     selected: {
-        type: Boolean
+        type: Number,
+        default: 0          // 0 for unselected, 1 for selected, 2 for blocked
     },
     placedAt: {
         type: Schema.Types.ObjectId,

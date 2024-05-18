@@ -20,6 +20,35 @@ const checkAccountType = async function(req, res, next){
     }
 }
 
+function haversine(lat1, lon1, lat2, lon2) {
+    // Radius of the Earth in kilometers
+    const R = 6371.0;
+    
+    // Convert latitude and longitude from degrees to radians
+    const lat1_rad = toRadians(lat1);
+    const lon1_rad = toRadians(lon1);
+    const lat2_rad = toRadians(lat2);
+    const lon2_rad = toRadians(lon2);
+    
+    // Differences in coordinates
+    const dlat = lat2_rad - lat1_rad;
+    const dlon = lon2_rad - lon1_rad;
+    
+    // Haversine formula
+    const a = Math.sin(dlat / 2) ** 2 + Math.cos(lat1_rad) * Math.cos(lat2_rad) * Math.sin(dlon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    
+    // Distance in kilometers
+    const distance = R * c;
+    
+    return distance;
+}
+
+// Helper function to convert degrees to radians
+function toRadians(degrees) {
+    return degrees * (Math.PI / 180);
+}
+
 router.use(express.urlencoded({ extended: true, limit: '50mb' }));
 router.use(express.json({limit: '50mb'}));
 
@@ -203,7 +232,7 @@ router.get('/contest/:contestID/register', authenticateToken, updateLastActive, 
         const user = await User.findOne({username: req.user.username});
         if (Date.now()>contest.startsAt) throw new AppError('Contest is already started! cannot register.', 500);
         if (contest.registrations.includes(user._id)) throw new AppError("User already registered", 500);
-        if (user.selected) throw new AppError("You are already placed");
+        if (user.selected==1) throw new AppError("You are already placed");
         const company  = await User.findById(contest.authors[0]);
         // console.log(company);
         // console.log(new Date(company.companyProfile.applicationDeadline));
@@ -234,7 +263,8 @@ router.put('/contest/:contestID/acceptTermsAndConditions', authenticateToken, up
         // console.log(company.companyProfile.eligibleBranches, )
         if (!company.companyProfile.eligibleBranches.includes(user.profile.department)) throw new AppError("You are ineligible as your department is not enlisted in company profile")
         if (user.profile.cgpa <= company.companyProfile.cgpaCutOff) throw new AppError("You are ineligible as your CGPA is less than required by the company");
-        if (user.selected==true) throw new AppError('You are already placed')
+        if (user.selected==1) throw new AppError('You are already placed')
+        if (user.selected==2) throw new AppError("Your profile is blocked")
         if (Date.now()>contest.startsAt) throw new AppError('Contest is already started!.', 500);
         if (contest.acceptedTermsAndConditions.includes(user._id)) throw new AppError("User already accepted T&C", 500);
         contest.capturedProfiles.push({userId: user._id, profile: user.profile});
@@ -308,8 +338,8 @@ router.put('/contest/:contestID/shortlist', authenticateToken, updateLastActive,
         // console.log(contest.shortlisted);
         for (let select of selected){
             let user = await User.findOne({username: select});
-            if (!user.selected){
-                user.selected = true;
+            if (user.selected==0){
+                user.selected = 1;
                 if (!contest.placedCandidates || !contest.placedCandidates.includes(user._id)){
                     contest.placedCandidates.push(user._id);
                 }
@@ -464,6 +494,15 @@ router.put('/contest/:contestID/updateLocation', authenticateToken, updateLastAc
         // console.log(req.user);
         const user = await User.findOne({username});
         const {latitude, longitude} = req.body;
+        const {contestID} = req.params;
+        const contest = await Contest.findById(contestID);
+        const company = await User.findById(contest.authors[0]._id);
+        // console.log("hello");
+        let excursion = haversine(user.latitude, user.longitude, latitude, longitude);
+        // console.log(typeof excursion, typeof company.companyProfile.maxExcursion, excursion, company.companyProfile.maxExcursion);
+        if (excursion>company.companyProfile.maxExcursion){
+            user.selected = 2;
+        }
         user.latitude = latitude;
         user.longitude = longitude;
         await user.save();
@@ -519,7 +558,7 @@ router.get('/contest/:contestID/standings', authenticateToken, updateLastActive,
         let selected = [];
         // console.log(standings);
         for (let user of standings){
-            if (user.isSelected){
+            if (user.isSelected!=0){
                 selected.push(user.username);
             }
         }
