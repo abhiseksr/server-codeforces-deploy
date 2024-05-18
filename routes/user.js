@@ -366,8 +366,8 @@ router.put('/collegeStatus/filter', authenticateToken, updateLastActive, async (
         for (let user of users){
             if (user.accountType=="contestant"){
                 let tempObj = {username: user.username, email: user.email, department: user.profile && user.profile.department, cgpa: user.profile.cgpa, selected: user.selected, yearOfStudy: user.yearOfStudy}
-                if (user.profile.department!=department || user.profile.cgpa<minCgpa || user.profile.cgpa>maxCgpa) continue;
-                if (statusOfCandidate=="") continue;
+                if (user.profile.cgpa<minCgpa || user.profile.cgpa>maxCgpa) continue;
+                if (department!="" && department!=user.profile.department) continue;
                 if (statusOfCandidate=="Placed" && user.selected!=1) continue;
                 if (statusOfCandidate=="Not Placed" && user.selected!=0) continue;
                 if (statusOfCandidate=="Blocked" && user.selected!=2) continue;
