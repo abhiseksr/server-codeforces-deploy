@@ -352,4 +352,88 @@ router.get('/comments/:username', authenticateToken, updateLastActive, async (re
     }
 })
 
+router.put('/collegeStatus/filter', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        let response= []
+        let {username} = req.user;
+        // console.log(username);
+        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.")
+        const users = await User.find();
+        const {department, statusOfCandidate, minCgpa, maxCgpa} = req.body;
+        // console.log(req.body);
+        // console.log(users);
+        // console.log(department, statusOfCandidate, minCgpa, maxCgpa);
+        for (let user of users){
+            if (user.accountType=="contestant"){
+                let tempObj = {username: user.username, email: user.email, department: user.profile && user.profile.department, cgpa: user.profile.cgpa, selected: user.selected, yearOfStudy: user.yearOfStudy}
+                if (user.profile.department!=department || user.profile.cgpa<minCgpa || user.profile.cgpa>maxCgpa) continue;
+                if (statusOfCandidate=="") continue;
+                if (statusOfCandidate=="Placed" && user.selected!=1) continue;
+                if (statusOfCandidate=="Not Placed" && user.selected!=0) continue;
+                if (statusOfCandidate=="Blocked" && user.selected!=2) continue;
+                response.push(tempObj);
+            }
+        }
+        res.json({response});
+    }
+    catch (err) {
+        // console.log(err);
+        return next(err);
+    }
+})
+
+router.get('/collegeStatus', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        let response= []
+        let {username} = req.user;
+        // console.log(username);
+        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.")
+        const users = await User.find();
+        // console.log(users);
+        for (let user of users){
+            if (user.accountType=="contestant"){
+                response.push({username: user.username, email: user.email, department: user.profile && user.profile.department, cgpa: user.profile.cgpa, selected: user.selected, yearOfStudy: user.yearOfStudy})
+            }
+        }
+        res.json({response});
+    }
+    catch (err) {
+        // console.log(err);
+        return next(err);
+    }
+})
+
+router.put('/candidate/:username/block', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        let {username} = req.user;
+        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.")
+        username = req.params.username;
+        let user = await User.findOne({username});
+        // console.log(user);
+        user.selected = 2;
+        await user.save();
+        res.send(`Blocked ${username} successfully`);
+    }
+    catch (err) {
+        // console.log(err);
+        return next(err);
+    }
+})
+
+router.put('/candidate/:username/unblock', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        let {username} = req.user;
+        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.")
+        username = req.params.username;
+        let user = await User.findOne({username});
+        user.selected = 0;
+        await user.save();
+        res.send(`Unblocked ${username} successfully`);
+    }
+    catch (err) {
+        return next(err);
+    }
+})
+
+
 module.exports = { userRouter: router, updateOnlineStatus, runInterval, updateLastActive };

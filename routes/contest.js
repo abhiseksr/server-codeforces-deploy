@@ -500,7 +500,7 @@ router.put('/contest/:contestID/updateLocation', authenticateToken, updateLastAc
         // console.log("hello");
         let excursion = haversine(user.latitude, user.longitude, latitude, longitude);
         // console.log(typeof excursion, typeof company.companyProfile.maxExcursion, excursion, company.companyProfile.maxExcursion);
-        if (excursion>company.companyProfile.maxExcursion){
+        if (user.latitude && user.latitude!=-1 && excursion>company.companyProfile.maxExcursion){
             user.selected = 2;
         }
         user.latitude = latitude;
