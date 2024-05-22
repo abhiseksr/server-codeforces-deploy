@@ -20,17 +20,17 @@ function authenticateToken(req, res, next) {
     const {accessToken: token} = req.cookies;
     // console.log(token);
     if (token == null) {
-        return next(new AppError("Give your identity please"))
+        return next(new AppError("Give your identity please", 401))
     }
   
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
     //   console.log(err)
-      if (err) return next(new AppError("Session timed out"));
+      if (err) return next(new AppError("Session timed out", 401));
       req.user = user
       if (process.env.READ_ONLY_MODE==1){
         if (req.url.includes('/api/login')){}
         else if (req.method!='GET') {
-            return next(new AppError("System is in read only mode."))
+            return next(new AppError("System is in read only mode.", 503))
         }
       }
       next()
@@ -50,23 +50,23 @@ async function getHashedPassword(password){
 router.post('/register',async (req,res, next)=>{
     try{
         // console.log(req.body);
-        if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode."))
+        if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode.", 503))
         const {username, password, email, accountType = 'contestant'} = req.body;
         let user = await User.findOne({username});
         // console.log(user)
-        if (user) return next(new AppError(`User with username ${username} is already registered. Please use other username.`))
+        if (user) return next(new AppError(`User with username ${username} is already registered. Please use other username.`, 400))
         if (accountType=="organiser"){
             const transporter = nodemailer.createTransport({
                 service: 'Gmail',
                 auth: {
-                  user: 'abhishekkumartbbt@gmail.com',
+                  user: process.env.ADMIN_GMAIL,
                   pass: process.env.GMAIL_APP_PASSWORD 
                 }
             });
             const accessToken = jwt.sign({username, email, accountType, password}, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '59m' });
             const info = await transporter.sendMail({
-                from: 'abhishekkumartbbt@gmail.com',
-                to: 'abhishekkumartbbt@gmail.com',
+                from: process.env.ADMIN_GMAIL,
+                to: process.env.ADMIN_GMAIL,
                 subject: 'Company/organiser registration requires approval',
                 html: `<p>Click the link below for approving the request:</p><a href="${process.env.CLIENT}/approveOrganiserRegistration/${accessToken}">Click to approve organiser registration.</a></p>`
             });
@@ -127,19 +127,19 @@ router.get('/logout', async (req, res, next)=>{
 router.post('/passwordRecovery', async(req, res, next)=>{
     try{
         // console.log(req.body);
-        if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode."))
+        if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode.", 503))
         const {username,email} = req.body;
         const user = await User.findOne({email,username});
         const transporter = nodemailer.createTransport({
             service: 'Gmail',
             auth: {
-              user: 'abhishekkumartbbt@gmail.com',
+              user: process.env.ADMIN_GMAIL,
               pass: process.env.GMAIL_APP_PASSWORD 
             }
         });
         const accessToken = jwt.sign({username: user.username, email: user.email, accountType: user.accountType}, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5m' });
         const info = await transporter.sendMail({
-            from: 'abhishekkumartbbt@gmail.com',
+            from: process.env.ADMIN_GMAIL,
             to: email,
             subject: 'Password Recovery',
             html: `<p>Click the link below for password recovery:</p><a href="${process.env.CLIENT}/updatePassword/${user._id}/${accessToken}">Click to recover your codeforces account</a></p>`
@@ -154,7 +154,7 @@ router.post('/passwordRecovery', async(req, res, next)=>{
 
 router.post('/approveOrganiserRegistration/:accessToken', async(req,res,next)=>{
     try{
-        if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode."))
+        if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode.", 503))
         const { accessToken: token} = req.params;
         jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
             // console.log(err)
@@ -168,12 +168,12 @@ router.post('/approveOrganiserRegistration/:accessToken', async(req,res,next)=>{
         const transporter = nodemailer.createTransport({
             service: 'Gmail',
             auth: {
-              user: 'abhishekkumartbbt@gmail.com',
+              user: process.env.ADMIN_GMAIL,
               pass: process.env.GMAIL_APP_PASSWORD 
             }
         });
         const info = await transporter.sendMail({
-            from: 'abhishekkumartbbt@gmail.com',
+            from: process.env.ADMIN_GMAIL,
             to: user.email,
             subject: 'Succeful registration to codehorses.up.railway.app',
             html: `<p>You have registered as an Organiser. Please login:</p><a href="${process.env.CLIENT}/login">Codehorses</a></p>`
@@ -187,7 +187,7 @@ router.post('/approveOrganiserRegistration/:accessToken', async(req,res,next)=>{
 
 router.patch('/updatePassword/:userId/:accessToken', async(req,res,next)=>{
     try{
-        if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode."))
+        if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode.", 503))
         const {userId, accessToken: token} = req.params;
         jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
             // console.log(err)
@@ -210,7 +210,7 @@ router.patch('/updatePassword/:userId/:accessToken', async(req,res,next)=>{
 
 router.get('/updatePassword/:userId/:accessToken', async(req,res,next)=>{
     try{
-        if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode."))
+        if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode.", 503))
         const {userId, accessToken: token} = req.params;
         res.json({userId, accessToken});
     }

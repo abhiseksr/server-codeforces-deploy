@@ -32,7 +32,7 @@ router.get('/problem/:problemId/addToFavourites', authenticateToken, updateLastA
         const {username} = req.user;
         const user = await User.findOne({username});
         const problem = await Problem.findById(problemId);
-        if (user.favourites.includes(problem._id))  throw new AppError("problem already in favourites", 403);
+        if (user.favourites.includes(problem._id))  throw new AppError("problem already in favourites", 400);
         user.favourites.push(problem._id);
         await user.save();
         res.send("added to favourites");
@@ -60,8 +60,16 @@ router.get('/problem/:problemID', authenticateToken, updateLastActive, async(req
         const problem = await Problem.findById(problemID);
         const contest = await Contest.findById(problem.contestID);
         const company = await User.findById(contest.authors[0]._id);
+        const user = await User.findOne({username: req.user.username});
         // console.log(req.user);
-        res.json({accountType: req.user.accountType, startsAt: contest.startsAt, endsAt: contest.endsAt, problem, username: req.user.username, contestID: contest._id, monitorCandidatesLocation: company.companyProfile.monitorCandidatesLocation});
+        let monitorCandidatesLocation = company.companyProfile.monitorCandidatesLocation;
+        if (!(contest.startsAt <= Date.now() && contest.endsAt >= Date.now())){
+            monitorCandidatesLocation = 0;
+        }
+        if ((contest.startsAt <= Date.now() && contest.endsAt >= Date.now()) && !contest.registrations.includes(user._id) && user.accountType!="organiser"){
+            throw new AppError("You are not registered to the contest. Problems can be accessed after contest is over.", 403);
+        }
+        res.json({accountType: req.user.accountType, startsAt: contest.startsAt, endsAt: contest.endsAt, problem, username: req.user.username, contestID: contest._id, monitorCandidatesLocation});
     }
     catch(err){
         return next(err);

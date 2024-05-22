@@ -119,7 +119,7 @@ router.get('/friends', authenticateToken, updateLastActive, async (req, res, nex
     try {
         const { username } = req.user;
         const user = await User.findOne({ username }).populate("following");
-        if (!user) throw new Error('user not logged in');
+        if (!user) throw new Error('user not logged in', 401);
         res.json({ following: user.following });
     }
     catch (err) {
@@ -141,7 +141,7 @@ router.get('/profile/:username/addFriend', authenticateToken, updateLastActive, 
             await user2.save();
         }
         else {
-            throw new AppError("user already in friend or you can't friend yourself", 403);
+            throw new AppError("user already in friend or you can't friend yourself", 400);
         }
         res.send("added to friend list");
     }
@@ -154,7 +154,7 @@ router.get('/contests', authenticateToken, updateLastActive, async (req, res, ne
     try {
         const { username } = req.user;
         const user = await User.findOne({ username });
-        if (!user) throw new Error('user does not exist');
+        if (!user) throw new Error('user does not exist', 404);
         let response = [];
         for (let contestID of user.contests) {
             const contest = await Contest.findById(contestID);
@@ -182,7 +182,7 @@ router.get('/contest/:contestID/usersLocation', authenticateToken, updateLastAct
         const { contestID } = req.params;
         const contest = await Contest.findById(contestID);
         const company = await User.findById(contest.authors[0]._id);
-        if (req.user.username != company.username) throw new AppError("Only company author is permitted to this route");
+        if (req.user.username != company.username) throw new AppError("Only company author is permitted to this route", 403);
         let locations = [];
         if (company.companyProfile.monitorCandidatesLocation == 0) res.json({ locations });
         for (let userId of contest.registrations) {
@@ -200,9 +200,9 @@ router.get('/contest/:contestID/usersLocation', authenticateToken, updateLastAct
 router.get('/favourites', authenticateToken, updateLastActive, async (req, res, next) => {
     try {
         const { username } = req.user;
-        if (!username) throw new Error('user not logged in');
+        if (!username) throw new Error('user not logged in', 401);
         const user = await User.findOne({ username }).populate('favourites');
-        if (!user) throw new Error('user does not exist');
+        if (!user) throw new Error('user does not exist', 404);
         res.json({ favourites: user.favourites });
     }
     catch (err) {
@@ -230,9 +230,9 @@ router.get('/', authenticateToken, updateLastActive, async (req, res, next) => {
 router.get('/settings', authenticateToken, updateLastActive, async (req, res, next) => {
     try {
         const { username } = req.user;
-        if (!username) throw new Error('user not logged in');
+        if (!username) throw new Error('user not logged in', 401);
         const user = await User.findOne({ username }).populate('profile').populate("companyProfile");
-        if (!user) throw new Error('user does not exist');
+        if (!user) throw new Error('user does not exist', 404);
         const { name, city, organisation, country, birthDate, profile, companyProfile } = user;
         // console.log(profile);
         if (user.accountType == 'contestant') {
@@ -251,9 +251,9 @@ router.get('/settings', authenticateToken, updateLastActive, async (req, res, ne
 router.put('/settings', authenticateToken, updateLastActive, async (req, res, next) => {
     try {
         const { username } = req.user;
-        if (!username) throw new Error('user not logged in');
+        if (!username) throw new Error('user not logged in', 401);
         const user = await User.findOne({ username });
-        if (!user) throw new Error('user does not exist');
+        if (!user) throw new Error('user does not exist', 404);
         // console.log("hello");
         if (user.accountType == "contestant") {
             const { name, city, organisation, country, birthDate, email, yearOfStudy,
@@ -357,7 +357,7 @@ router.put('/collegeStatus/filter', authenticateToken, updateLastActive, async (
         let response= []
         let {username} = req.user;
         // console.log(username);
-        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.")
+        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.", 403)
         const users = await User.find();
         const {department, statusOfCandidate, minCgpa, maxCgpa} = req.body;
         // console.log(req.body);
@@ -387,7 +387,7 @@ router.get('/collegeStatus', authenticateToken, updateLastActive, async (req, re
         let response= []
         let {username} = req.user;
         // console.log(username);
-        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.")
+        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.", 403)
         const users = await User.find();
         // console.log(users);
         for (let user of users){
@@ -406,7 +406,7 @@ router.get('/collegeStatus', authenticateToken, updateLastActive, async (req, re
 router.put('/candidate/:username/block', authenticateToken, updateLastActive, async (req, res, next) => {
     try {
         let {username} = req.user;
-        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.")
+        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.", 403)
         username = req.params.username;
         let user = await User.findOne({username});
         // console.log(user);
@@ -423,7 +423,7 @@ router.put('/candidate/:username/block', authenticateToken, updateLastActive, as
 router.put('/candidate/:username/unblock', authenticateToken, updateLastActive, async (req, res, next) => {
     try {
         let {username} = req.user;
-        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.")
+        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.", 403)
         username = req.params.username;
         let user = await User.findOne({username});
         user.selected = 0;
