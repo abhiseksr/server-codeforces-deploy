@@ -67,6 +67,12 @@ const contestSchema = Schema({
             type: mongoose.Schema.Types.Mixed
         }
     ],
+    firstTimeCoordinateRecording: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'User'
+        }
+    ],
     round: {
         type: String,
         default: "Registration to Online Assesment"

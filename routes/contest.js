@@ -499,9 +499,16 @@ router.put('/contest/:contestID/updateLocation', authenticateToken, updateLastAc
         const company = await User.findById(contest.authors[0]._id);
         // console.log("hello");
         let excursion = haversine(user.latitude, user.longitude, latitude, longitude);
+        // console.log(excursion);
+        let firstVisit = 0;
+        if (!contest.firstTimeCoordinateRecording.includes(user._id)){
+            firstVisit = 1;
+            contest.firstTimeCoordinateRecording.push(user._id);
+            await contest.save();
+        }
         
         // console.log(typeof excursion, typeof company.companyProfile.maxExcursion, excursion, company.companyProfile.maxExcursion);
-        if (contest.startsAt <= Date.now() && contest.endsAt >= Date.now() && user.latitude && user.latitude != -1 && excursion > company.companyProfile.maxExcursion) {
+        if (contest.startsAt <= Date.now() && contest.endsAt >= Date.now() && excursion > company.companyProfile.maxExcursion && firstVisit) {
             user.selected = 2;
         }
         if (contest.startsAt <= Date.now() && contest.endsAt >= Date.now()){
