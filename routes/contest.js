@@ -240,7 +240,6 @@ router.get('/contest/:contestID/register', authenticateToken, updateLastActive, 
         if (!contest.acceptedTermsAndConditions.includes(user._id)) throw new AppError("Please accept terms and conditions of the company first");
         if (Date.now() >= company.companyProfile.applicationDeadline) throw new AppError("The deadline for application has expired")
         contest.registrations.push(user._id);
-        contest.shortlisted.push(user._id);
         const tempObj = { participant: user._id, submissions: [] };
         contest.leaderBoard.push(tempObj);
         user.contests.push(contest._id);
@@ -508,7 +507,7 @@ router.put('/contest/:contestID/updateLocation', authenticateToken, updateLastAc
         }
         
         // console.log(typeof excursion, typeof company.companyProfile.maxExcursion, excursion, company.companyProfile.maxExcursion);
-        if (contest.startsAt <= Date.now() && contest.endsAt >= Date.now() && excursion > company.companyProfile.maxExcursion && firstVisit) {
+        if (contest.startsAt <= Date.now() && contest.endsAt >= Date.now() && excursion > company.companyProfile.maxExcursion && firstVisit==0) {
             user.selected = 2;
         }
         if (contest.startsAt <= Date.now() && contest.endsAt >= Date.now()){
