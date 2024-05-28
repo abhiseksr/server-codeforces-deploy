@@ -357,7 +357,7 @@ router.put('/collegeStatus/filter', authenticateToken, updateLastActive, async (
         let response= []
         let {username} = req.user;
         // console.log(username);
-        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.", 403)
+        if (username!="admin") throw new AppError("This user does not own this website. Login with college admin credentials.", 403)
         const users = await User.find();
         const {department, statusOfCandidate, minCgpa, maxCgpa} = req.body;
         // console.log(req.body);
@@ -387,7 +387,7 @@ router.get('/collegeStatus', authenticateToken, updateLastActive, async (req, re
         let response= []
         let {username} = req.user;
         // console.log(username);
-        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.", 403)
+        if (username!="admin") throw new AppError("This user does not own this website. Login with college admin credentials.", 403)
         const users = await User.find();
         // console.log(users);
         for (let user of users){
@@ -406,7 +406,7 @@ router.get('/collegeStatus', authenticateToken, updateLastActive, async (req, re
 router.put('/candidate/:username/block', authenticateToken, updateLastActive, async (req, res, next) => {
     try {
         let {username} = req.user;
-        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.", 403)
+        if (username!="admin") throw new AppError("This user does not own this website. Login with college admin credentials.", 403)
         username = req.params.username;
         let user = await User.findOne({username});
         // console.log(user);
@@ -423,7 +423,7 @@ router.put('/candidate/:username/block', authenticateToken, updateLastActive, as
 router.put('/candidate/:username/unblock', authenticateToken, updateLastActive, async (req, res, next) => {
     try {
         let {username} = req.user;
-        if (username!="college") throw new AppError("This user does not own this website. Login with college admin credentials.", 403)
+        if (username!="admin") throw new AppError("This user does not own this website. Login with college admin credentials.", 403)
         username = req.params.username;
         let user = await User.findOne({username});
         user.selected = 0;
