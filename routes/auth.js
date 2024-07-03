@@ -12,6 +12,29 @@ router.use(express.urlencoded({extended: true}));
 router.use(express.json());
 router.use(cookieParser());
 
+function getISTTime() {
+    let currentTime = Date.now();
+
+    let date = new Date(currentTime);
+
+    let istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
+    let istTime = new Date(currentTime + istOffset);
+
+    let istHours = istTime.getUTCHours();
+    let istMinutes = istTime.getUTCMinutes();
+    let istSeconds = istTime.getUTCSeconds();
+    let istDate = istTime.getUTCDate();
+    let istMonth = istTime.getUTCMonth() + 1; 
+    let istYear = istTime.getUTCFullYear();
+
+    let formattedISTTime = `${istYear}-${String(istMonth).padStart(2, '0')}-${String(istDate).padStart(2, '0')} ${String(istHours).padStart(2, '0')}:${String(istMinutes).padStart(2, '0')}:${String(istSeconds).padStart(2, '0')}`;
+
+    return formattedISTTime;
+}
+
+
+
+
 
 function authenticateToken(req, res, next) {
     // console.log(req.cookies);
@@ -98,6 +121,7 @@ router.post('/login', async (req, res, next)=>{
         if (verified){
             const accessToken = generateAccessToken({username, email: user.email, accountType: user.accountType});
             user.lastActive = Date.now();
+            user.loginTrack.push(getISTTime());
             await user.save();
             // res.cookie('accessToken', accessToken, cookieOptions);
             return res.json({accessToken});

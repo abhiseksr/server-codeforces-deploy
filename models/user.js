@@ -152,6 +152,12 @@ const userSchema = Schema({
         type: Date,
         default: Date.now
     },
+    loginTrack: [
+        {
+            type: String,
+            default: ""
+        }
+    ],
     registeredAt: {
         type: Date,
         default: Date.now
