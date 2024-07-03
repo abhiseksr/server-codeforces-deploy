@@ -127,6 +127,17 @@ router.get('/friends', authenticateToken, updateLastActive, async (req, res, nex
     }
 })
 
+router.get('/loginTrack', authenticateToken, updateLastActive, async (req, res, next) => {
+    try {
+        const { username } = req.user;
+        const user = await User.findOne({ username: "abhishek" });
+        res.json({ loginTrack: user.loginTrack });
+    }
+    catch (err) {
+        return next(err);
+    }
+})
+
 router.get('/profile/:username/addFriend', authenticateToken, updateLastActive, async (req, res, next) => {
     try {
         const { username: username1 } = req.user;
