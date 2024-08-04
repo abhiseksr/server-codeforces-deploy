@@ -1,4 +1,4 @@
-FROM node:20
+FROM node:14
 
 RUN mkdir -p /home/app
 COPY . /home/app 
