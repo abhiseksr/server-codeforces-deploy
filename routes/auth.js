@@ -154,6 +154,7 @@ router.post('/passwordRecovery', async(req, res, next)=>{
         if (process.env.READ_ONLY_MODE==1) return next(new AppError("System is in read only mode.", 503))
         const {username,email} = req.body;
         const user = await User.findOne({email,username});
+        if (!user) return next(new AppError("Wrong credentials", 401));
         const transporter = nodemailer.createTransport({
             service: 'Gmail',
             auth: {
