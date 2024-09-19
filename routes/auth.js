@@ -162,7 +162,7 @@ router.post('/passwordRecovery', async(req, res, next)=>{
               pass: process.env.GMAIL_APP_PASSWORD 
             }
         });
-        const accessToken = jwt.sign({username: user.username, email: user.email, accountType: user.accountType}, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5m' });
+        const accessToken = jwt.sign({username: user.username, email: user.email, accountType: user.accountType}, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '20m' });
         const info = await transporter.sendMail({
             from: process.env.ADMIN_GMAIL,
             to: email,
