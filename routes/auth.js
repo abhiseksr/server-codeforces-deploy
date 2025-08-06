@@ -99,7 +99,13 @@ router.post('/register',async (req,res, next)=>{
         user = new User({username, password: await getHashedPassword(password), email, accountType, profile: {username: username}});
         await user.save();
         const accessToken = generateAccessToken({username, email, accountType});
-        // res.cookie('accessToken', accessToken, cookieOptions);;
+        res.cookie('accessToken', accessToken, {
+            domain: process.env.TOP_DOMAIN, // leading dot optional
+            httpOnly: true,
+            secure: true,
+            sameSite: "None",
+            maxAge: 3600000
+          });
         res.json({accessToken});
     }
     catch(err){
@@ -123,7 +129,13 @@ router.post('/login', async (req, res, next)=>{
             user.lastActive = Date.now();
             user.loginTrack.push(getISTTime());
             await user.save();
-            // res.cookie('accessToken', accessToken, cookieOptions);
+            res.cookie('accessToken', accessToken, {
+                domain: process.env.TOP_DOMAIN,
+                httpOnly: true,
+                secure: true,
+                sameSite: "None",
+                maxAge: 3600000
+              });
             return res.json({accessToken});
         }
         else{
@@ -139,7 +151,13 @@ router.post('/login', async (req, res, next)=>{
 
 router.get('/logout', async (req, res, next)=>{
     try{
-        // res.clearCookie('accessToken');
+        res.clearCookie('accessToken', {
+            domain: process.env.TOP_DOMAIN,
+            path: '/',              // match default
+            secure: true,
+            sameSite: 'None',
+          });
+          
         req.user = undefined;
         res.send('logged out successfully');
     }
